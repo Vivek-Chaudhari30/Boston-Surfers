@@ -1,4 +1,5 @@
 import type { ApiError } from '@cb/shared';
+import { unstable_rethrow } from 'next/navigation';
 import type { z } from 'zod';
 
 /** `{ error, code }` JSON error response (ARCHITECTURE §4). */
@@ -45,6 +46,8 @@ export function handle<A extends unknown[]>(fn: (...args: A) => Promise<Response
     try {
       return await fn(...args);
     } catch (err) {
+      // Let Next.js internals (dynamic-rendering bail-outs, notFound, redirect) through.
+      unstable_rethrow(err);
       const message = err instanceof Error ? err.message : String(err);
       if (message.startsWith('Missing or invalid env vars')) return errorResponse(503, message, 'NOT_CONFIGURED');
       console.error('[api]', err);
