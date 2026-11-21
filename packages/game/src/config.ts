@@ -5,8 +5,4 @@ export const VIEW = {
   BACKGROUND: '#05070d',
 } as const;
 
-/** Stub-only settings. Delete with the stub. */
-export const STUB = {
-  RUN_MS: 10_000,
-  POINTS_PER_TAP: 10,
-} as const;
+export const TRACK = { HORIZON: 245, FEET: 670, LOOKAHEAD: 95 } as const;

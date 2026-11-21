@@ -7,7 +7,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
-    "test": "echo \"@cb/game: no tests yet\""
+    "test": "tsx --test test/*.test.ts"
   },
   "dependencies": {
     "@cb/shared": "workspace:*",
