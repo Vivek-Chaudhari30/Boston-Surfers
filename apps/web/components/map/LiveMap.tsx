@@ -1,14 +1,14 @@
 'use client';
 
-import { SchematicMap } from './SchematicMap';
+import { GeoMap } from './GeoMap';
 import { useTrains } from './useTrains';
 
-export function LiveMap() {
+export function LiveMap({ className = '' }: { className?: string }) {
   const { snapshot, mode } = useTrains();
   return (
-    <div className="relative aspect-[4/3] w-full lg:aspect-auto lg:h-full lg:min-h-[60vh]">
-      <SchematicMap snapshot={snapshot} />
-      <p className="absolute bottom-2 right-3 font-mono text-xs text-hud-dim">
+    <div className={`relative h-full min-h-[360px] w-full ${className}`}>
+      <GeoMap snapshot={snapshot} interactive />
+      <p className="pointer-events-none absolute bottom-1.5 right-3 font-mono text-xs text-hud-dim">
         {mode === 'replay' ? 'replay' : 'live'} · {snapshot?.vehicles.length ?? 0} trains
       </p>
     </div>

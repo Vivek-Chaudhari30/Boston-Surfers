@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { DailyBoard } from '@/components/map/DailyBoard';
 import { LineLegend } from '@/components/map/LineLegend';
-import { LineBar, Panel } from '@/components/ui/Panel';
+import { TopBar } from '@/components/site/TopBar';
+import { Panel } from '@/components/ui/Panel';
 import { parseDay, shiftDay } from '@/lib/day';
 import { bostonDate } from '@/lib/time';
 
@@ -25,16 +26,16 @@ async function Leaderboard({ searchParams }: { searchParams: Search }) {
   const day = parseDay(asked, today);
   const isToday = day === today;
   const href = (d: string) => (d === today ? '/leaderboard' : `/leaderboard?date=${d}`);
-  const nav = 'rounded-lg border border-hud-border px-3 py-1.5 font-mono text-sm';
+  const nav = 'hud-glass rounded-lg px-3 py-1.5 font-mono text-sm';
 
   return (
     <main className="flex flex-1 flex-col">
-      <LineBar />
+      <TopBar current="leaderboard" />
       <div className="mx-auto w-full max-w-3xl p-4 md:p-6">
-        <Link href="/" className="font-mono text-sm text-hud-dim">
+        <Link href="/" className="font-mono text-sm text-hud-dim hover:text-hud-text">
           ← Live map
         </Link>
-        <h1 className="my-4 text-3xl font-semibold">Daily leaderboard</h1>
+        <h1 className="hud-glow my-4 text-3xl font-semibold tracking-tight">Daily leaderboard</h1>
         <div className="mb-4 flex items-center justify-between gap-3">
           <Link href={href(shiftDay(day, -1))} className={nav} aria-label="Previous day">
             ←

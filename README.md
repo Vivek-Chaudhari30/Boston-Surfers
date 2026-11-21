@@ -69,6 +69,7 @@ zod schemas for every endpoint (`api.ts`), serial protocol v1 + `parseLine()` (`
 |---|---|
 | `record-mbta.ts --minutes 60` | Records live snapshots every 10 s into `apps/web/public/replay/<date>.json` (raw responses go to gitignored `recordings/`) |
 | `build-stations.ts [--layout]` | Station order per route/direction from MBTA canonical patterns, plus a generated fisheye layout (regenerate only with `--layout`) |
+| `build-geo.ts` | Real track shapes (decoded, Douglas-Peucker simplified) and station lat/lon from the MBTA API into `packages/shared/src/schematic/geo.json`, for the geographic map |
 | `trim-replay.ts --in <raw> --minutes 30` | Cuts a raw recording down to `apps/web/public/replay/demo.json` (thinned frames, validated with `ReplayFile`); raw `20*.json` recordings are gitignored |
 | `seed-demo.ts [--clear]` | 4 fake riders with beatable scores (480 and below) on `green-3812`; rerun before judging (rides expire after 90 min) |
 

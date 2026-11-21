@@ -8,7 +8,7 @@ import { HttpDispenser, createDispenser, WebSerialDispenser, type Dispenser, typ
 import { readFlags } from '@/lib/adapters/flags';
 import { createRiderInputs, type RiderInput } from '@/lib/adapters/rider-input';
 import { api, errorText } from '@/lib/api-client';
-import { SchematicMap } from '@/components/map/SchematicMap';
+import { GeoMap } from '@/components/map/GeoMap';
 import { useDaily } from '@/components/map/DailyBoard';
 import { useTrains } from '@/components/map/useTrains';
 import { useCarState, useJoinToken, useKioskKey, useMissingFor, useToast, useTransfers, useWindowCountdown } from './hooks';
@@ -167,7 +167,7 @@ export function KioskApp({ carId }: { carId: string }) {
       <div className="flex min-h-0 flex-1">
         {/* Map: left 62% */}
         <section className="relative w-[62%] p-4">
-          <SchematicMap snapshot={trains.snapshot} youVehicleId={youVehicleId} variant="kiosk" />
+          <GeoMap snapshot={trains.snapshot} youVehicleId={youVehicleId} variant="kiosk" />
           <div className="absolute left-6 top-6 font-mono text-sm text-hud-dim">
             {trains.mode === 'replay' ? 'REPLAY' : 'LIVE'} · {trains.snapshot?.vehicles.length ?? 0} trains
             {youTrain ? '' : youVehicleId ? ' · your train not in feed' : ' · press Shift+D to pin your train'}
@@ -312,11 +312,19 @@ function TransferCard({
     );
   } else if (!data) {
     body = <p className={dim}>Loading predictions…</p>;
-  } else {
+  } else if (vehicle.status === 'STOPPED_AT') {
     body = (
       <>
         <p className="text-3xl">{stationName(vehicle.stationId)}</p>
         <p className="mt-2 text-xl text-hud-dim">Your train is waiting to depart: next trip starts soon.</p>
+      </>
+    );
+  } else {
+    // Moving but no predictions (usually the last stretch of a trip): show where it's heading.
+    body = (
+      <>
+        <p className="text-3xl">{stationName(vehicle.stationId)}</p>
+        <p className="mt-2 text-xl text-hud-dim">Arriving soon. No transfer predictions for this stretch.</p>
       </>
     );
   }

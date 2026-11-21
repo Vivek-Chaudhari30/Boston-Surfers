@@ -1,51 +1,46 @@
 import Link from 'next/link';
-import { DailyBoard } from '@/components/map/DailyBoard';
 import { LineLegend } from '@/components/map/LineLegend';
 import { LiveMap } from '@/components/map/LiveMap';
-import { LineBar, Panel } from '@/components/ui/Panel';
+import { HowItWorks } from '@/components/site/HowItWorks';
+import { LeadersCard } from '@/components/site/LeadersCard';
+import { TopBar } from '@/components/site/TopBar';
 
-/** Website: live map + daily leaderboard. */
+/** Website: full-bleed live map hero with floating HUD overlays, then how it works. */
 export default function HomePage() {
   return (
     <main className="flex flex-1 flex-col">
-      <LineBar />
-      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 md:p-6">
-        <header className="flex flex-wrap items-baseline justify-between gap-2">
-          <div>
-            <h1 className="hud-glow text-3xl font-semibold tracking-tight">Constant Buffers</h1>
-            <p className="text-hud-dim">Every train on the T, live. Play on board, win your car.</p>
-          </div>
-          <nav className="flex gap-4 font-mono text-sm text-hud-dim">
-            <Link href="/leaderboard">Leaderboard</Link>
-          </nav>
-        </header>
-        <div className="grid flex-1 gap-6 lg:grid-cols-[1.7fr_1fr]">
-          <Panel title="Live map">
+      <TopBar current="map" />
+      <div className="relative">
+        <div className="relative h-[70dvh] w-full overflow-hidden lg:h-[calc(100dvh-3rem)]">
+          <div className="absolute inset-0 [&>*]:h-full [&>*]:w-full">
             <LiveMap />
-            <div className="mt-3">
-              <LineLegend />
+          </div>
+          <div className="pointer-events-none absolute inset-0 flex flex-col justify-between gap-3 p-3 lg:p-5">
+            <div className="hud-glass pointer-events-auto max-w-sm self-start rounded-2xl px-4 py-3">
+              <h1 className="hud-glow text-xl font-semibold tracking-tight lg:text-2xl">Constant Buffers</h1>
+              <p className="mt-0.5 text-sm text-hud-dim">Every train on the T, live. Play on board, win your car.</p>
+              <Link
+                href="/leaderboard"
+                className="mt-2 inline-block font-mono text-xs uppercase tracking-[0.15em] text-mbta-green-bright hover:underline"
+              >
+                Leaderboard →
+              </Link>
             </div>
-          </Panel>
-          <Panel title="Today's leaders">
-            <DailyBoard />
-          </Panel>
+            <div className="pointer-events-auto self-start">
+              <LineLegend chips />
+            </div>
+          </div>
         </div>
-        <section aria-label="How it works" className="grid gap-3 sm:grid-cols-3">
-          {[
-            ['1 · Scan', 'Scan the QR on the kiosk in your train car.'],
-            ['2 · Play', 'Run the track on your phone. Beat your car.'],
-            ['3 · Win a sticker', 'Top the car board, then tap I’m getting off to claim.'],
-          ].map(([t, d]) => (
-            <div key={t} className="rounded-xl border border-hud-border bg-hud-panel/80 p-4">
-              <h3 className="font-mono text-sm uppercase tracking-[0.15em]">{t}</h3>
-              <p className="mt-1 text-sm text-hud-dim">{d}</p>
-            </div>
-          ))}
-        </section>
-        <footer className="pb-2 text-center font-mono text-xs text-hud-dim">
-          Built for BostonHacks 2026 · Constant Buffers
-        </footer>
+        <div className="p-3 lg:pointer-events-none lg:absolute lg:right-5 lg:top-5 lg:w-80 lg:p-0">
+          <div className="lg:pointer-events-auto">
+            <LeadersCard />
+          </div>
+        </div>
       </div>
+      <HowItWorks />
+      <footer className="pb-6 text-center font-mono text-xs text-hud-dim">
+        Built for BostonHacks 2026 · Constant Buffers
+      </footer>
     </main>
   );
 }
