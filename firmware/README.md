@@ -1,0 +1,33 @@
+# Firmware: sticker dispenser
+
+**Owned by Jeet.** Arduino Uno + SG90 servo + push button. The sketch goes in `firmware/dispenser/dispenser.ino` (not written yet).
+
+## Protocol v1 (summary; full spec in [ARCHITECTURE §5](../docs/ARCHITECTURE.md))
+
+115200 baud, 8N1, ASCII lines ending in `\n` (ignore `\r`), at most 32 chars. The host-side constants live in [`packages/shared/src/serial-protocol.ts`](../packages/shared/src/serial-protocol.ts); the sketch must mirror these strings exactly.
+
+| Host → Arduino | Arduino → Host |
+|---|---|
+| (port opens, Uno resets) | `READY cb-dispenser v1` (once at boot) |
+| `PING` | `PONG` |
+| `DISPENSE <id>` (`<id>` = 1–12 `[A-Za-z0-9]`) | `ACK <id>` then `DONE <id>` |
+| `DISPENSE <id>` while busy | `ERR <id> BUSY` |
+| `DISPENSE <id>` same id as last success | `DONE <id>` (no second drop) |
+| (IR sensor fitted, no drop in 1.5 s) | `ERR <id> NODROP` |
+| `STATUS` | `STATUS idle count=<n>` or `STATUS busy` |
+| `SERVO <deg>` | `OK SERVO <deg>` (calibration) |
+| (button on D2 pressed) | `BTN` then `DONE btn` |
+| anything else | `ERR - BADCMD` |
+
+Pins: servo D9, button D2 (`INPUT_PULLUP`), LED D13, optional IR break-beam D3. Use a non-blocking `millis()` state machine so `PING`/`STATUS` answer mid-dispense. Power the servo separately (shared ground) or put a 470 µF cap across it.
+
+## Commands
+
+```bash
+arduino-cli board list
+arduino-cli compile --fqbn arduino:avr:uno firmware/dispenser
+arduino-cli upload  --fqbn arduino:avr:uno -p /dev/cu.usbmodemXXXX firmware/dispenser
+arduino-cli monitor -p /dev/cu.usbmodemXXXX -c baudrate=115200
+```
+
+Test from the browser at `http://localhost:3000/dev/dispenser` (Chrome, no env vars). Close `arduino-cli monitor` first: only one program can hold the port.

@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+/* Dark "Spider-Tracker" HUD. MBTA colors mirror @cb/shared/lines.ts. */
+:root {
+  --hud-bg: #05070d;
+  --hud-panel: #0b1020;
+  --hud-border: #1c2540;
+  --hud-text: #e6ebf5;
+  --hud-dim: #8a94ab;
+  --mbta-red: #da291c;
+  --mbta-orange: #ed8b00;
+  --mbta-blue: #003da5;
+  --mbta-green: #00843d;
+}
+
+@theme inline {
+  --color-hud-bg: var(--hud-bg);
+  --color-hud-panel: var(--hud-panel);
+  --color-hud-border: var(--hud-border);
+  --color-hud-text: var(--hud-text);
+  --color-hud-dim: var(--hud-dim);
+  --color-mbta-red: var(--mbta-red);
+  --color-mbta-orange: var(--mbta-orange);
+  --color-mbta-blue: var(--mbta-blue);
+  --color-mbta-green: var(--mbta-green);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+}
+
+html,
+body {
+  background: var(--hud-bg);
+  color: var(--hud-text);
+  font-family: var(--font-sans);
+  color-scheme: dark;
+}
+
+.hud-glow {
+  text-shadow: 0 0 12px rgb(0 132 61 / 0.6);
+}

@@ -1,0 +1,19 @@
+{
+  "name": "@cb/game",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "test": "echo \"@cb/game: no tests yet\""
+  },
+  "dependencies": {
+    "@cb/shared": "workspace:*",
+    "phaser": "^4.2.1"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}
