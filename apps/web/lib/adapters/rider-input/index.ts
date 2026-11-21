@@ -16,8 +16,11 @@ export { codeFromQr, normalizeTypedCode } from './claim-code';
 export function createRiderInputs(
   video: HTMLVideoElement | null,
   flags: Pick<AdapterFlags, 'input'> = readFlags(),
+  hooks: { onBuffer?: (buffer: string) => void; onCamReady?: () => void; onCamError?: (message: string) => void } = {},
 ): RiderInput[] {
-  const inputs: RiderInput[] = [new KeyboardRiderInput()];
-  if (flags.input === 'webcam' && video) inputs.push(new WebcamQrRiderInput(video));
+  const inputs: RiderInput[] = [new KeyboardRiderInput(hooks.onBuffer)];
+  if (flags.input === 'webcam' && video) {
+    inputs.push(new WebcamQrRiderInput(video, { onReady: hooks.onCamReady, onError: hooks.onCamError }));
+  }
   return inputs;
 }

@@ -1,10 +1,11 @@
 'use client';
 
 import { OkResponse, type TrainVehicle } from '@cb/shared';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { HttpDispenser, WebSerialDispenser, type Dispenser, type DispenserStatus } from '@/lib/adapters/dispenser';
 import type { AdapterFlags } from '@/lib/adapters/flags';
 import { api, errorText } from '@/lib/api-client';
+import { pinEntries } from './logic';
 
 /** Hidden kiosk status panel (Shift+D): feed, dispenser, realtime, vehicle pinning. */
 export function DevPanel(props: {
@@ -55,6 +56,7 @@ export function DevPanel(props: {
     }
   }
 
+  const pins = useMemo(() => pinEntries(props.lineVehicles), [props.lineVehicles]);
   const d = props.dispenser;
   const row = 'flex items-center justify-between gap-3 border-b border-hud-border py-2';
   const btn = 'rounded border border-hud-border px-3 py-1 hover:border-hud-dim';
@@ -138,15 +140,19 @@ export function DevPanel(props: {
       </form>
 
       <div className="mt-3">
-        <p className="mb-2 text-hud-dim">Pin this kiosk&apos;s train (current: {props.youVehicleId ?? 'none'})</p>
+        <p className="mb-2 text-hud-dim">Pin this kiosk&apos;s train (current: {props.youVehicleId ?? 'none'}). ★ = moving</p>
         <div className="grid max-h-64 grid-cols-2 gap-1 overflow-y-auto">
-          {props.lineVehicles.map((v) => (
+          {pins.map((v) => (
             <button
               key={v.id}
               onClick={() => pin(v.id)}
+              title={`${v.id} · ${v.route}`}
               className={`rounded border px-2 py-1 text-left text-xs ${v.id === props.youVehicleId ? 'border-white' : 'border-hud-border'}`}
             >
-              {v.label} · {v.route} · {v.stationId.replace('place-', '')}
+              {v.moving ? '★ ' : ''}
+              {v.station}
+              {v.toward && <span className="block text-hud-dim">→ {v.toward}</span>}
+              <span className="block text-hud-dim">{v.route}</span>
             </button>
           ))}
           {props.lineVehicles.length === 0 && <p className="text-hud-dim">No vehicles on this line in the feed.</p>}

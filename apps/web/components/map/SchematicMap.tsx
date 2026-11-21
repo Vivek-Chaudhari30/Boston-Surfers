@@ -12,6 +12,11 @@ import {
 } from '@cb/shared';
 import { memo, useMemo } from 'react';
 import { vehiclePoint } from '@/lib/mbta/placement';
+import { computeViewBox } from '@/components/kiosk/logic';
+
+/** Label scale per variant: kiosk is read from a distance, so text and markers are 1.6x. */
+const SCALE = { default: 1, kiosk: 1.6 } as const;
+export type MapVariant = keyof typeof SCALE;
 
 const TRANSFER_IDS = new Set(TRANSFER_STATIONS.map((t) => t.stationId));
 
@@ -25,7 +30,7 @@ const NAMES: Record<string, string> = (() => {
 /** Termini get labels too. */
 const TERMINI = new Set(Object.values(layout.paths).flatMap((ps) => (ps ?? []).flatMap((p) => [p[0], p.at(-1)])));
 
-const StaticLayer = memo(function StaticLayer({ showAllLabels }: { showAllLabels: boolean }) {
+const StaticLayer = memo(function StaticLayer({ showAllLabels, k }: { showAllLabels: boolean; k: number }) {
   const lines = Object.entries(layout.paths) as [RouteId, string[][]][];
   return (
     <g>
@@ -38,7 +43,7 @@ const StaticLayer = memo(function StaticLayer({ showAllLabels }: { showAllLabels
               points={pts.map((p) => `${p.x},${p.y}`).join(' ')}
               fill="none"
               stroke={routeColor(route)}
-              strokeWidth={6}
+              strokeWidth={k > 1 ? 9 : 6}
               strokeLinejoin="round"
               strokeLinecap="round"
               opacity={0.85}
@@ -52,9 +57,9 @@ const StaticLayer = memo(function StaticLayer({ showAllLabels }: { showAllLabels
         const label = showAllLabels || transfer || TERMINI.has(id);
         return (
           <g key={id}>
-            <circle cx={p.x} cy={p.y} r={transfer ? 7 : 3.5} fill={HUD_BACKGROUND} stroke="#e6ebf5" strokeWidth={transfer ? 2.5 : 1.5} />
+            <circle cx={p.x} cy={p.y} r={(transfer ? 7 : 3.5) * k} fill={HUD_BACKGROUND} stroke="#e6ebf5" strokeWidth={(transfer ? 2.5 : 1.5) * k} />
             {label && (
-              <text x={p.x + 10} y={p.y - 8} fill="#8a94ab" fontSize={transfer ? 15 : 12} fontFamily="ui-sans-serif, system-ui">
+              <text x={p.x + 10 * k} y={p.y - 8 * k} fill={k > 1 ? '#aab3c8' : '#8a94ab'} fontSize={(transfer ? 15 : 12) * k} fontFamily="ui-sans-serif, system-ui">
                 {NAMES[id] ?? id}
               </text>
             )}
@@ -70,12 +75,15 @@ export function SchematicMap({
   youVehicleId,
   showAllLabels = false,
   className = '',
+  variant = 'default',
 }: {
   snapshot: TrainSnapshot | null;
   youVehicleId?: string | null;
   showAllLabels?: boolean;
   className?: string;
+  variant?: MapVariant;
 }) {
+  const k = SCALE[variant];
   const trains = useMemo(
     () =>
       (snapshot?.vehicles ?? [])
@@ -84,9 +92,19 @@ export function SchematicMap({
     [snapshot],
   );
   const empty = Object.keys(layout.stations).length === 0;
+  // Crop to the stations (they only span part of the 1600x1000 canvas); leave room on the right for labels.
+  const vb = useMemo(
+    () =>
+      computeViewBox(
+        Object.values(layout.stations),
+        { left: 30 * k, top: 40 * k, right: 150 * k, bottom: 30 * k },
+        { width: layout.width, height: layout.height },
+      ),
+    [k],
+  );
 
   return (
-    <svg viewBox={`0 0 ${layout.width} ${layout.height}`} className={`h-full w-full ${className}`} role="img" aria-label="Live MBTA map">
+    <svg viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`} className={`h-full w-full ${className}`} role="img" aria-label="Live MBTA map">
       <defs>
         <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="4" result="b" />
@@ -101,7 +119,7 @@ export function SchematicMap({
           Run scripts/build-stations.ts to generate the schematic
         </text>
       ) : (
-        <StaticLayer showAllLabels={showAllLabels} />
+        <StaticLayer showAllLabels={showAllLabels} k={k} />
       )}
       <g>
         {trains.map(({ v, p }) => {
@@ -111,16 +129,17 @@ export function SchematicMap({
             <g key={v.id} style={{ transform: `translate(${p.x}px, ${p.y}px)`, transition: 'transform 1s ease-in-out' }}>
               {you && (
                 <>
-                  <circle r={14} fill="none" stroke="#ffffff" strokeWidth={3}>
-                    <animate attributeName="r" values="12;26;12" dur="1.6s" repeatCount="indefinite" />
+                  <circle r={14 * k} fill="none" stroke="#ffffff" strokeWidth={3 * (k > 1 ? 1.3 : 1)}>
+                    <animate attributeName="r" values={`${12 * k};${26 * k};${12 * k}`} dur="1.6s" repeatCount="indefinite" />
                     <animate attributeName="opacity" values="1;0.1;1" dur="1.6s" repeatCount="indefinite" />
                   </circle>
-                  <text y={-22} textAnchor="middle" fill="#ffffff" fontSize={18} fontWeight={700} fontFamily="ui-monospace, monospace">
+                  {k > 1 && <rect x={-30} y={-60} width={60} height={28} rx={14} fill={HUD_BACKGROUND} fillOpacity={0.9} stroke="#ffffff" strokeWidth={1.5} />}
+                  <text y={-22 * k + (k > 1 ? -2 : 0)} textAnchor="middle" fill="#ffffff" fontSize={18 * (k > 1 ? 1.2 : 1)} fontWeight={700} fontFamily="ui-monospace, monospace">
                     YOU
                   </text>
                 </>
               )}
-              <circle r={you ? 9 : 6} fill={color} stroke="#ffffff" strokeWidth={you ? 3 : 1.5} />
+              <circle r={(you ? 9 : 6) * (k > 1 ? 1.4 : 1)} fill={color} stroke="#ffffff" strokeWidth={you ? 3 : 1.5} />
             </g>
           );
         })}

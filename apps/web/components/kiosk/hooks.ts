@@ -32,15 +32,24 @@ export function useKioskKey(fromUrl: string | null): string | null {
  * Car state: polled every 15 s and refetched (debounced 300 ms) on any `car:<id>` broadcast.
  * Broadcast payloads are ignored: they are only hints (ARCHITECTURE §4).
  */
-export function useCarState(carId: string, kioskKey: string | null) {
+export function useCarState(carId: string, kioskKey: string | null, onRiderAboard?: (activeRiders: number) => void) {
   const [state, setState] = useState<CarStateResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [realtimeHits, setRealtimeHits] = useState(0);
+  const prevRiders = useRef<number | null>(null);
+  const onAboard = useRef(onRiderAboard);
+  useEffect(() => {
+    onAboard.current = onRiderAboard;
+  }, [onRiderAboard]);
 
   const load = useCallback(async () => {
     if (!kioskKey) return;
     try {
-      setState(await api(`/api/cars/${carId}/state`, CarStateResponse, { kioskKey }));
+      const next = await api(`/api/cars/${carId}/state`, CarStateResponse, { kioskKey });
+      // A rise between refetches means someone just joined (no /state contract change).
+      if (prevRiders.current !== null && next.activeRiders > prevRiders.current) onAboard.current?.(next.activeRiders);
+      prevRiders.current = next.activeRiders;
+      setState(next);
       setError(null);
     } catch (err) {
       setError(errorText(err));
@@ -107,20 +116,16 @@ export function useWindowCountdown() {
   return left;
 }
 
-/** Transfer help for the pinned vehicle, every 15 s. */
+/** Transfer help for the pinned vehicle, every 15 s. Returns null until a response for THIS vehicle arrives. */
 export function useTransfers(vehicleId: string | null) {
-  const [data, setData] = useState<TransfersResponse | null>(null);
+  const [got, setGot] = useState<{ vehicleId: string; data: TransfersResponse } | null>(null);
   useEffect(() => {
-    if (!vehicleId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- clear stale data when unpinned
-      setData(null);
-      return;
-    }
+    if (!vehicleId) return;
     let stop = false;
     const load = async () => {
       try {
         const r = await api(`/api/transfers?vehicleId=${encodeURIComponent(vehicleId)}`, TransfersResponse);
-        if (!stop) setData(r);
+        if (!stop) setGot({ vehicleId, data: r });
       } catch {
         /* keep last */
       }
@@ -132,7 +137,21 @@ export function useTransfers(vehicleId: string | null) {
       clearInterval(t);
     };
   }, [vehicleId]);
-  return data;
+  return got && got.vehicleId === vehicleId ? got.data : null;
+}
+
+/** True once `present` has been false for `ms` straight (resets when it comes back or the id changes). */
+export function useMissingFor(key: string | null, present: boolean, ms = 60_000): boolean {
+  const [missing, setMissing] = useState<string | null>(null);
+  useEffect(() => {
+    if (!key || present) return;
+    const t = setTimeout(() => setMissing(key), ms);
+    return () => {
+      clearTimeout(t);
+      setMissing((m) => (m === key ? null : m));
+    };
+  }, [key, present, ms]);
+  return !!key && !present && missing === key;
 }
 
 /** A transient message that clears itself. */
