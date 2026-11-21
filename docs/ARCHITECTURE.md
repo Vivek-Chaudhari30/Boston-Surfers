@@ -272,6 +272,8 @@ insert into cars (id, line, car_number) values ('green-3812', 'Green', '3812');
 ```
 Sort order: `best_score desc, first_at asc`.
 
+`0002_secure_views.sql` sets `security_invoker = true` on both views and revokes them from `anon`/`authenticated`, so the public key can't read leaderboards directly (Supabase's "Security Definer View" advisor). Only the server, with the secret key, reads them.
+
 ---
 
 ## 4. API contracts
