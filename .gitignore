@@ -9,3 +9,6 @@ coverage
 dist
 recordings
 supabase/.temp
+
+# raw replay recordings (about 6 MB each); demo.json is the tracked, trimmed one
+apps/web/public/replay/20*.json
