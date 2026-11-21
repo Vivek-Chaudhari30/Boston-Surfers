@@ -42,7 +42,7 @@ export type GeoMapVariant = keyof typeof K;
 const MAX_ZOOM = 16.5;
 /** Turns the light OSM raster into a dark navy-ish basemap. */
 const DARKEN = 'invert(1) hue-rotate(188deg) brightness(0.95) contrast(0.92) saturate(0.55)';
-const ZOOM_BTN = 'h-8 w-8 rounded-md border border-hud-border bg-hud-panel/85 text-base text-hud-text backdrop-blur transition hover:border-hud-dim';
+const ZOOM_BTN = 'tracker-zoom';
 const FONT = 'ui-sans-serif, system-ui, -apple-system, sans-serif';
 const MONO = 'ui-monospace, SFMono-Regular, Menlo, monospace';
 
@@ -148,6 +148,7 @@ const RouteLayer = memo(function RouteLayer({ k, glow }: { k: number; glow: bool
       {ROUTE_PATHS.map((r, i) => (
         <path key={`l${i}`} d={r.d} stroke={r.color} strokeWidth={(r.green ? 3.4 : 4.4) * k} vectorEffect="non-scaling-stroke" />
       ))}
+      {ROUTE_PATHS.map((r,i)=><path key={`signal${i}`} className="tracker-trace" d={r.d} pathLength={100} stroke="#dfffff" strokeWidth={1.2*k} strokeDasharray=".5 18" strokeOpacity={0.6} vectorEffect="non-scaling-stroke"/>)}
     </g>
   );
 });
@@ -313,13 +314,15 @@ const TrainLayer = memo(function TrainLayer({
                     <animate attributeName="r" values={`${12 * k};${30 * k};${12 * k}`} dur="1.7s" repeatCount="indefinite" />
                     <animate attributeName="opacity" values="1;0.05;1" dur="1.7s" repeatCount="indefinite" />
                   </circle>
-                  <rect x={-23 * k} y={-(46 * k)} width={46 * k} height={20 * k} rx={10 * k} fill={HUD_BACKGROUND} fillOpacity={0.92} stroke="#ffffff" strokeWidth={1.4} />
-                  <text y={-(36 * k)} textAnchor="middle" dominantBaseline="central" fill="#ffffff" fontSize={12.5 * k} fontWeight={700} fontFamily={MONO} letterSpacing={1}>
+                  <rect x={-23 * k} y={-(46 * k)} width={46 * k} height={20 * k} rx={3 * k} fill="#ffdf69" stroke="#14213e" strokeWidth={2} />
+                  <text y={-(36 * k)} textAnchor="middle" dominantBaseline="central" fill="#14213e" fontSize={12.5 * k} fontWeight={900} fontFamily={MONO} letterSpacing={1}>
                     YOU
                   </text>
                 </>
               )}
-              <circle r={4.6 * k * boost} fill={color} stroke="#ffffff" strokeWidth={(you ? 2.2 : 1.5) * (k > 1 ? 1.25 : 1)} />
+              <rect x={-5.5*k*boost} y={-7*k*boost} width={11*k*boost} height={14*k*boost} rx={3*k} fill={color} stroke="#effbff" strokeWidth={1.5}/>
+              <rect x={-3*k*boost} y={-4*k*boost} width={6*k*boost} height={4*k*boost} rx={k} fill="#14213e"/>
+              <path d={`M${-2.5*k*boost} ${4*k*boost}h${5*k*boost}`} stroke="#fff0a6" strokeWidth={1.7*k}/>
               {onHover && <circle r={13} fill="transparent" />}
             </g>
           </g>
@@ -540,7 +543,7 @@ function GeoMapInner({ snapshot, youVehicleId = null, variant = 'default', inter
   return (
     <div
       ref={rootRef}
-      className={`relative h-full w-full overflow-hidden bg-hud-bg ${interactive ? 'cursor-grab active:cursor-grabbing' : ''} ${className}`}
+      className={`tracker-shell relative h-full w-full overflow-hidden bg-hud-bg ${interactive ? 'cursor-grab active:cursor-grabbing' : ''} ${className}`}
       style={interactive ? { touchAction: 'none' } : undefined}
       onPointerDown={interactive ? onPointerDown : undefined}
       onPointerMove={interactive ? onPointerMove : undefined}
@@ -550,6 +553,7 @@ function GeoMapInner({ snapshot, youVehicleId = null, variant = 'default', inter
     >
       <svg width={w} height={h} className="absolute inset-0 block select-none" role="img" aria-label="Live MBTA map" style={{ background: HUD_BACKGROUND }}>
         <defs>
+          <pattern id="tracker-grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#7ed7ef" strokeWidth="0.5" strokeOpacity="0.14"/><circle cx="0" cy="0" r="1" fill="#9edbff" fillOpacity="0.35"/></pattern>
           <filter id="route-blur" x="-20%" y="-20%" width="140%" height="140%">
             <feGaussianBlur stdDeviation={5 * k} />
           </filter>
@@ -571,11 +575,12 @@ function GeoMapInner({ snapshot, youVehicleId = null, variant = 'default', inter
               <TileLayer tiles={upper} sig={`U${upperSig}`} />
             </g>
             {/* Tint the basemap toward the HUD palette and dim it so the lines are the loudest thing. */}
-            <rect width={w} height={h} fill="#0a1430" opacity={0.28} />
+            <rect width={w} height={h} fill="#0b2855" opacity={0.33} />
+            <rect width={w} height={h} fill="url(#tracker-grid)" pointerEvents="none"/>
             <rect width={w} height={h} fill="url(#vignette)" pointerEvents="none" />
             <g transform={`translate(${tx} ${ty}) scale(${scale})`}>
               <RouteLayer k={k} glow={!moving} />
-              <StationLayer scale={scale} zoom={view.zoom} k={k} showMinor={showMinor} onHover={interactive ? setHoverStation : null} />
+              {h >= 280 && <StationLayer scale={scale} zoom={view.zoom} k={k} showMinor={showMinor} onHover={interactive ? setHoverStation : null} />}
               <TrainLayer
                 trains={trains}
                 scale={scale}
@@ -588,6 +593,8 @@ function GeoMapInner({ snapshot, youVehicleId = null, variant = 'default', inter
           </>
         )}
       </svg>
+      <div className="tracker-topline" aria-hidden="true"><b/>T-TRACKER <span style={{color:'#8cd0e9'}}> / BOSTON</span></div>
+      <div className="tracker-corner" aria-hidden="true"/>
 
       <p
         className="pointer-events-none absolute bottom-1.5 left-2 font-sans text-[10px] leading-none text-hud-dim/60"
@@ -622,7 +629,7 @@ function GeoMapInner({ snapshot, youVehicleId = null, variant = 'default', inter
 
       {tip && (
         <div
-          className="pointer-events-none absolute z-10 min-w-28 rounded-lg border border-hud-border bg-hud-panel/95 px-3 py-2 shadow-lg backdrop-blur"
+          className="tracker-tooltip pointer-events-none absolute z-10 min-w-28 rounded-lg border border-hud-border bg-hud-panel/95 px-3 py-2 shadow-lg backdrop-blur"
           style={{
             left: Math.max(8, Math.min(w - 190, tip.x + 14)),
             top: Math.max(8, Math.min(h - 70, tip.y - 14)),

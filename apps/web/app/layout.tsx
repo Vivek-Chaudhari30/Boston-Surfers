@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import './arcade.css';
 
 export const metadata: Metadata = {
-  title: 'Constant Buffers',
+  title: 'Boston Surfers | Your friendly neighborhood T',
   description: 'Live MBTA map, a runner game for riders, and a sticker for the car champion.',
 };
 

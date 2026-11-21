@@ -1,11 +1,21 @@
-'use client';
+"use client";
 
-import { createRunner, type RunResult } from '@cb/game';
-import { LINE_COLORS, MAX_SCORE_PER_SEC, maxScoreForDuration, type Line } from '@cb/shared';
-import { useEffect, useRef, useState } from 'react';
+import { createRunner, type RunResult } from "@cb/game";
+import { LINE_COLORS, maxScoreForDuration, type Line } from "@cb/shared";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { GeoMap } from "@/components/map/GeoMap";
+import { useTrains } from "@/components/map/useTrains";
+import { ArcadeBrand } from "@/components/play/ArcadeBrand";
+import { ComicBoard, RunResults } from "@/components/play/RunResults";
+import {
+  PRACTICE_KEY,
+  readPractice,
+  recordPractice,
+  type PracticeRun,
+} from "./practice";
 
 const LINES = Object.keys(LINE_COLORS) as Line[];
-
 function newSeed() {
   return Math.floor(Math.random() * 2 ** 31);
 }
@@ -13,84 +23,197 @@ function newSeed() {
 export default function GameHarness() {
   const hostRef = useRef<HTMLDivElement>(null);
   const runnerRef = useRef<ReturnType<typeof createRunner> | null>(null);
-  const [line, setLine] = useState<Line>('Green');
+  const historyRef = useRef<PracticeRun[]>([]);
+  const [line, setLine] = useState<Line>("Green");
   const [seed, setSeed] = useState(newSeed);
   const [score, setScore] = useState(0);
-  const [result, setResult] = useState<RunResult | null>(null);
-
-  // Remount the runner when the theme changes; restart() handles new seeds.
+  const [result, setResult] = useState<PracticeRun | null>(null);
+  const [history, setHistory] = useState<PracticeRun[]>([]);
+  const { snapshot, mode } = useTrains();
   useEffect(() => {
-    const host = hostRef.current;
-    if (!host) return;
-    const runner = createRunner(host, {
+    try {
+      const stored = readPractice(localStorage.getItem(PRACTICE_KEY));
+      historyRef.current = stored;
+      setHistory(stored);
+    } catch {
+      /* Storage may be disabled; session play still works. */
+    }
+  }, []);
+  const finished = useCallback((run: RunResult) => {
+    const saved = { ...run, id: crypto.randomUUID(), at: Date.now() };
+    const next = recordPractice(historyRef.current, saved);
+    historyRef.current = next;
+    setHistory(next);
+    setResult(saved);
+    try {
+      localStorage.setItem(PRACTICE_KEY, JSON.stringify(next));
+    } catch {
+      /* Keep the in-memory standings. */
+    }
+  }, []);
+  useEffect(() => {
+    if (!hostRef.current) return;
+    const runner = createRunner(hostRef.current, {
       seed,
       theme: { lineColor: LINE_COLORS[line] },
       onScoreChange: setScore,
-      onGameOver: setResult,
+      onGameOver: finished,
     });
     runnerRef.current = runner;
     return () => {
       runner.destroy();
       runnerRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- seed changes go through restart()
-  }, [line]);
-
+    // Seed changes go through restart; line changes remount the artwork.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [line, finished]);
   function restart() {
     const s = newSeed();
     setSeed(s);
-    setResult(null);
     setScore(0);
+    setResult(null);
     runnerRef.current?.restart(s);
   }
-
-  const ceiling = result ? Math.floor(maxScoreForDuration(result.durationMs)) : null;
-
+  const entries = history.map((r, i) => ({
+    rank: i + 1,
+    displayName: `You · ${new Date(r.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
+    score: r.score,
+  }));
+  const rank = result ? history.findIndex((r) => r.id === result.id) + 1 : null;
   return (
-    <div className="flex w-full max-w-5xl flex-col gap-4 md:flex-row">
-      <div
-        ref={hostRef}
-        className="mx-auto aspect-[390/844] w-full max-w-[390px] overflow-hidden rounded-xl border border-hud-border"
-        style={{ touchAction: 'none' }}
-      />
-      <aside className="flex flex-1 flex-col gap-3 font-mono text-sm">
-        <div className="flex flex-wrap gap-2">
-          {LINES.map((l) => (
-            <button
-              key={l}
-              onClick={() => setLine(l)}
-              className={`rounded px-3 py-1 ${l === line ? 'text-white' : 'text-hud-dim'}`}
-              style={{ border: `1px solid ${LINE_COLORS[l]}`, background: l === line ? LINE_COLORS[l] : 'transparent' }}
-            >
-              {l}
-            </button>
-          ))}
-        </div>
-        <button onClick={restart} className="rounded border border-hud-border bg-hud-panel px-3 py-2 text-left">
-          restart(seed)
-        </button>
-        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
-          <dt className="text-hud-dim">seed</dt>
-          <dd>{seed}</dd>
-          <dt className="text-hud-dim">live score</dt>
-          <dd>{score}</dd>
-          <dt className="text-hud-dim">MAX_SCORE_PER_SEC</dt>
-          <dd>{MAX_SCORE_PER_SEC}</dd>
-        </dl>
-        <div className="rounded border border-hud-border bg-hud-panel p-3">
-          <div className="mb-2 text-xs uppercase tracking-[0.2em] text-hud-dim">RunResult</div>
-          {result ? (
-            <>
-              <pre className="whitespace-pre-wrap">{JSON.stringify(result, null, 2)}</pre>
-              <p className={result.score <= (ceiling ?? 0) ? 'text-mbta-green' : 'text-mbta-red'}>
-                server ceiling for this duration: {ceiling} ({result.score <= (ceiling ?? 0) ? 'would pass' : 'would be rejected'})
+    <div className="arcade-shell">
+      <header className="arcade-nav">
+        <ArcadeBrand />
+        <nav className="arcade-links">
+          <Link href="/dev/game" className="active">
+            PLAY
+          </Link>
+          <Link href="/">CITY TRACKER</Link>
+          <Link href="/leaderboard">LEADERS</Link>
+        </nav>
+      </header>
+      <div className="arcade-grid">
+        <aside className="arcade-side">
+          <span className="arcade-kicker">BOSTONHACKS ’26 / ISSUE 001</span>
+          <h1 className="arcade-title">
+            The city.
+            <br />
+            The tracks.
+            <br />
+            <span>Your story.</span>
+          </h1>
+          <p className="arcade-description">
+            Your ordinary commute just got a little <strong>super.</strong>{" "}
+            Dodge the T, chase the gold, and write your own origin story.
+          </p>
+          <span className="arcade-sticker">WITH GREAT TRANSIT…</span>
+          <div className="arcade-controls">
+            <kbd>← →</kbd>
+            <span>Switch tracks. Stay one move ahead.</span>
+            <kbd>↑</kbd>
+            <span>Jump the yellow barriers.</span>
+            <kbd>↓</kbd>
+            <span>Slide under the pink bars.</span>
+          </div>
+          <p className="arcade-practice-note" style={{ marginTop: 24 }}>
+            No signup. No downloads.
+            <br />
+            Just your friendly neighborhood runner.
+          </p>
+        </aside>
+        <div
+          ref={hostRef}
+          className="arcade-stage"
+          aria-label="Boston Surfers game"
+        />
+        <aside className="arcade-side right">
+          <section className="arcade-panel">
+            <div className="arcade-panel-head">
+              CITY SIGNAL <small>{mode.toUpperCase()}</small>
+            </div>
+            <div className="arcade-inset-map">
+              <GeoMap snapshot={snapshot} interactive />
+            </div>
+            <div className="arcade-panel-body">
+              <p>
+                Real Boston tracks. Real train positions. Your next adventure is
+                on the map.
               </p>
-            </>
-          ) : (
-            <p className="text-hud-dim">Waiting for onGameOver…</p>
+              <Link
+                href="/"
+                style={{ color: "#72f4dc", fontSize: 14, fontWeight: 800 }}
+              >
+                EXPLORE THE TRACKER
+              </Link>
+            </div>
+          </section>
+          <section className="arcade-panel">
+            <div className="arcade-panel-head">
+              PICK YOUR LINE <small>SUIT UP</small>
+            </div>
+            <div className="arcade-panel-body">
+              <div className="arcade-line-picker">
+                {LINES.map((l) => (
+                  <button
+                    key={l}
+                    aria-label={`${l} Line`}
+                    aria-pressed={line === l}
+                    style={{ background: LINE_COLORS[l] }}
+                    onClick={() => {
+                      setResult(null);
+                      setLine(l);
+                    }}
+                  >
+                    {l[0]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
+          <section className="arcade-panel">
+            <div className="arcade-panel-head">
+              LOCAL LEGENDS <small>PRACTICE</small>
+            </div>
+            <div className="arcade-panel-body">
+              <ComicBoard entries={entries.slice(0, 3)} />
+              <p style={{ marginTop: 12 }}>
+                Your best runs on this device. Scan a car’s kiosk QR to join the
+                real leaderboard.
+              </p>
+            </div>
+          </section>
+        </aside>
+      </div>
+      <details className="arcade-devdetails">
+        <summary>Developer diagnostics</summary>
+        <pre>
+          {JSON.stringify(
+            {
+              seed,
+              score,
+              result,
+              serverCeiling: result
+                ? Math.floor(maxScoreForDuration(result.durationMs))
+                : null,
+            },
+            null,
+            2,
           )}
-        </div>
-      </aside>
+        </pre>
+        <button onClick={restart}>Restart with a new seed</button>
+      </details>
+      {result && (
+        <RunResults
+          run={result}
+          entries={entries}
+          highlightRank={rank || null}
+          source="practice"
+          onReplay={restart}
+          onLeave={() => {
+            window.location.href = "/";
+          }}
+        />
+      )}
     </div>
   );
 }

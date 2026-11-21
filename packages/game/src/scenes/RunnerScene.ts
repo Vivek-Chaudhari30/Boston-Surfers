@@ -1,16 +1,26 @@
-import * as Phaser from 'phaser';
-import { TRACK, VIEW } from '../config';
-import { RunnerModel, type Action, type CourseRow } from '../model';
-import type { RunnerOptions } from '../types';
+import * as Phaser from "phaser";
+import { TRACK } from "../config";
+import { RunnerModel, type Action } from "../model";
+import type { RunnerOptions } from "../types";
+import { drawHero, drawWorld, INK, polygon } from "./ComicWorld";
 
-export const RUNNER_SCENE_KEY = 'runner';
-const INK = 0x071019;
-const WHITE = 0xe8f0f2;
-const MUTED = '#8eabb7';
+export const RUNNER_SCENE_KEY = "runner";
+const COMIC = 'Impact, "Arial Black", sans-serif';
+const BODY = '"Trebuchet MS", system-ui, sans-serif';
+type Spark = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  color: number;
+};
 
 export class RunnerScene extends Phaser.Scene {
   private model!: RunnerModel;
-  private art!: Phaser.GameObjects.Graphics;
+  private world!: Phaser.GameObjects.Graphics;
+  private hero!: Phaser.GameObjects.Graphics;
+  private effects!: Phaser.GameObjects.Graphics;
   private hud!: Phaser.GameObjects.Text;
   private coinsText!: Phaser.GameObjects.Text;
   private speedText!: Phaser.GameObjects.Text;
@@ -18,10 +28,17 @@ export class RunnerScene extends Phaser.Scene {
   private visualLane = 1;
   private reported = false;
   private lastScore = -1;
-  private accent = 0x24d68b;
+  private lastCoins = 0;
+  private accent = 0x24d9bf;
+  private clock = 0;
+  private reducedMotion = false;
+  private sparks: Spark[] = [];
   private pointerStart: { x: number; y: number; at: number } | null = null;
 
-  constructor(private readonly opts: RunnerOptions, private readonly playing: (active: boolean) => void) {
+  constructor(
+    private readonly opts: RunnerOptions,
+    private readonly playing: (active: boolean) => void,
+  ) {
     super(RUNNER_SCENE_KEY);
   }
 
@@ -30,215 +47,380 @@ export class RunnerScene extends Phaser.Scene {
     this.visualLane = 1;
     this.reported = false;
     this.lastScore = -1;
+    this.lastCoins = 0;
     this.pointerStart = null;
+    this.clock = 0;
+    this.sparks = [];
+    this.reducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
     this.playing(false);
   }
 
   create(): void {
     const supplied = this.opts.theme?.lineColor;
-    this.accent = supplied && /^#[0-9a-f]{6}$/i.test(supplied) ?
-      Phaser.Display.Color.HexStringToColor(supplied).color : 0x24d68b;
-    this.art = this.add.graphics();
-    this.text(24, 23, 'BOSTON SURFERS', 13, '#a6c3ce').setLetterSpacing(2);
-    this.hud = this.text(23, 44, '00000', 38, '#ffffff').setFontStyle('bold');
-    this.coinsText = this.text(366, 31, '0 COINS', 15, '#ffd36e').setOrigin(1, 0);
-    this.speedText = this.text(366, 57, '12 M/S', 12, MUTED).setOrigin(1, 0);
-    this.text(195, 116, 'NEXT STOP  /  PARK STREET', 12, MUTED).setOrigin(0.5).setLetterSpacing(1);
-    this.text(195, 744, 'SWIPE TO MOVE · UP TO JUMP · DOWN TO DUCK', 10, MUTED).setOrigin(0.5);
-    const controls: [string, Action][] = [['LEFT', 'left'], ['JUMP', 'jump'], ['DUCK', 'duck'], ['RIGHT', 'right']];
-    controls.forEach(([label, action], index) => {
-      const x = 52 + index * 95;
-      const button = this.add.rectangle(x, 791, 84, 47, 0x152631).setStrokeStyle(1, 0x36515c)
-        .setInteractive({ useHandCursor: true });
-      this.text(x, 791, label, 12, '#d9e7eb').setOrigin(0.5);
-      button.on('pointerdown', () => { this.game.canvas.focus(); this.model.act(action); });
-    });
+    this.accent =
+      supplied && /^#[0-9a-f]{6}$/i.test(supplied)
+        ? Phaser.Display.Color.HexStringToColor(supplied).color
+        : 0x24d9bf;
+    this.world = this.add.graphics();
+    this.hero = this.add.graphics().setDepth(2);
+    this.effects = this.add.graphics().setDepth(3);
+    const chrome = this.add.graphics().setDepth(4);
+    chrome.fillStyle(INK).fillRect(0, 0, 390, 96);
+    chrome.fillStyle(this.accent).fillRect(0, 0, 390, 5);
+    chrome.fillStyle(0xffd74f).fillRoundedRect(15, 13, 180, 68, 12);
+    chrome.lineStyle(3, 0xffffff).strokeRoundedRect(15, 13, 180, 68, 12);
+    chrome.fillStyle(0xfff8df).fillRoundedRect(207, 13, 168, 38, 11);
+    chrome.fillStyle(0x35e6d1).fillRoundedRect(207, 59, 168, 22, 7);
+    this.label(29, 18, "YOUR SCORE", 12, "#242446").setDepth(5);
+    this.hud = this.label(28, 31, "00000", 39, "#181e3a", true)
+      .setStroke("#181e3a", 0)
+      .setDepth(5);
+    this.coinsText = this.label(290, 32, "★  0", 24, "#25213c", true)
+      .setOrigin(0.5)
+      .setDepth(5);
+    this.speedText = this.label(291, 70, "12 M/S · LET’S ROLL", 11, "#17283d")
+      .setOrigin(0.5)
+      .setDepth(5);
+    const sign = this.add.container(195, 146);
+    const plate = this.add
+      .rectangle(0, 0, 252, 33, 0xffffff)
+      .setStrokeStyle(3, INK);
+    sign.add([
+      plate,
+      this.label(
+        0,
+        0,
+        "BOSTON  /  THE CITY IS YOURS",
+        13,
+        "#242347",
+        true,
+      ).setOrigin(0.5),
+    ]);
+    sign.setAngle(-2);
+    this.makeControls(chrome);
     this.overlay = this.add.container(0, 0).setDepth(10);
     this.showIntro();
 
     const keyboard = (event: KeyboardEvent) => {
       if (document.activeElement !== this.game.canvas) return;
-      const keys: Record<string, Action> = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right',
-        KeyD: 'right', ArrowUp: 'jump', KeyW: 'jump', Space: 'jump', ArrowDown: 'duck', KeyS: 'duck' };
-      if (event.code === 'Enter' || event.code === 'Space') {
+      const keys: Record<string, Action> = {
+        ArrowLeft: "left",
+        KeyA: "left",
+        ArrowRight: "right",
+        KeyD: "right",
+        ArrowUp: "jump",
+        KeyW: "jump",
+        Space: "jump",
+        ArrowDown: "duck",
+        KeyS: "duck",
+      };
+      if (
+        (event.code === "Enter" || event.code === "Space") &&
+        !this.model.running &&
+        !this.model.ended
+      ) {
         event.preventDefault();
-        if (this.model.ended) { this.scene.restart({ seed: this.model.seed }); return; }
-        if (!this.model.running) { this.startRun(); return; }
+        this.startRun();
+        return;
       }
       const action = keys[event.code];
-      if (action && this.model.running) { event.preventDefault(); if (!event.repeat) this.model.act(action); }
+      if (action && this.model.running) {
+        event.preventDefault();
+        if (!event.repeat) this.act(action);
+      }
     };
-    const down = (pointer: Phaser.Input.Pointer) => {
-      this.game.canvas.focus();
-      this.pointerStart = { x: pointer.x, y: pointer.y, at: this.time.now };
+    const down = (p: Phaser.Input.Pointer) => {
+      this.game.canvas.focus({ preventScroll: true });
+      this.pointerStart = { x: p.x, y: p.y, at: this.time.now };
     };
-    const up = (pointer: Phaser.Input.Pointer) => {
+    const up = (p: Phaser.Input.Pointer) => {
       const start = this.pointerStart;
       this.pointerStart = null;
-      if (!start || !this.model.running || this.time.now - start.at > 900) return;
-      const dx = pointer.x - start.x, dy = pointer.y - start.y;
+      if (!start || !this.model.running || this.time.now - start.at > 900)
+        return;
+      const dx = p.x - start.x,
+        dy = p.y - start.y;
       if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
-      this.model.act(Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'left' : 'right') : (dy < 0 ? 'jump' : 'duck'));
+      this.act(
+        Math.abs(dx) > Math.abs(dy)
+          ? dx < 0
+            ? "left"
+            : "right"
+          : dy < 0
+            ? "jump"
+            : "duck",
+      );
     };
-    this.input.keyboard?.on('keydown', keyboard);
-    this.input.on('pointerdown', down);
-    this.input.on('pointerup', up);
-    this.input.on('pointerupoutside', up);
+    this.input.keyboard?.on("keydown", keyboard);
+    this.input
+      .on("pointerdown", down)
+      .on("pointerup", up)
+      .on("pointerupoutside", up);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      this.input.keyboard?.off('keydown', keyboard);
-      this.input.off('pointerdown', down);
-      this.input.off('pointerup', up);
-      this.input.off('pointerupoutside', up);
+      this.input.keyboard?.off("keydown", keyboard);
+      this.input
+        .off("pointerdown", down)
+        .off("pointerup", up)
+        .off("pointerupoutside", up);
       this.playing(false);
     });
     this.opts.onScoreChange?.(0);
     this.paint(0);
   }
 
-  private text(x: number, y: number, value: string, size: number, color: string): Phaser.GameObjects.Text {
-    return this.add.text(x, y, value, { fontFamily: 'system-ui, -apple-system, sans-serif',
-      fontSize: `${size}px`, color });
+  private label(
+    x: number,
+    y: number,
+    value: string,
+    size: number,
+    color: string,
+    comic = false,
+  ): Phaser.GameObjects.Text {
+    return this.add.text(x, y, value, {
+      fontFamily: comic ? COMIC : BODY,
+      fontSize: `${size}px`,
+      color,
+      fontStyle: comic ? "italic" : "bold",
+      ...(comic
+        ? { stroke: "#101631", strokeThickness: size > 30 ? 5 : 0 }
+        : {}),
+    });
+  }
+
+  private makeControls(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(INK).fillRect(0, 749, 390, 95);
+    const controls: [string, string, Action, number][] = [
+      ["←", "LANE", "left", 0x3cdae2],
+      ["↑", "JUMP", "jump", 0xffdc52],
+      ["↓", "DUCK", "duck", 0xff77a5],
+      ["→", "LANE", "right", 0x3cdae2],
+    ];
+    controls.forEach(([symbol, name, action, color], i) => {
+      const x = 52 + i * 95;
+      this.add.rectangle(x + 2, 790, 81, 58, 0x050a1f).setDepth(5);
+      const button = this.add
+        .rectangle(x, 785, 81, 58, color)
+        .setStrokeStyle(2, 0xffffff)
+        .setInteractive({ useHandCursor: true })
+        .setDepth(5);
+      this.label(x, 777, symbol, 27, "#18233c").setOrigin(0.5).setDepth(5);
+      this.label(x, 799, name, 10, "#18233c").setOrigin(0.5).setDepth(5);
+      button.on("pointerdown", () => {
+        this.game.canvas.focus({ preventScroll: true });
+        this.act(action);
+        this.tweens.add({
+          targets: button,
+          scaleY: 0.9,
+          duration: 70,
+          yoyo: true,
+        });
+      });
+    });
+    this.label(
+      195,
+      829,
+      "SWIPE / ARROWS / WASD  ·  KEEP YOUR HERO MOVING",
+      10,
+      "#d1deff",
+    )
+      .setOrigin(0.5)
+      .setDepth(5);
+  }
+
+  private act(action: Action): void {
+    const oldJump = this.model.jumpLeft,
+      oldDuck = this.model.duckLeft,
+      oldLane = this.model.lane;
+    this.model.act(action);
+    if (this.model.jumpLeft > oldJump) this.pop("THWIP!", 0xffdb51, 570);
+    if (this.model.duckLeft > oldDuck) this.pop("SWISH!", 0x3ff2d0, 590);
+    if (this.model.lane !== oldLane)
+      this.burst(195 + (oldLane - 1) * 126, 696, 0x80ffef, 7);
+  }
+
+  private showIntro(): void {
+    const art = this.add.graphics();
+    polygon(art, [19, 254, 370, 237, 381, 521, 17, 541], 0x19204c, true, 0.94);
+    art.lineStyle(3, 0x61edf5).strokeRect(28, 257, 334, 268);
+    for (let y = 272; y < 510; y += 12)
+      for (let x = 39; x < 350; x += 12)
+        art.fillStyle(0x6976b8, 0.18).fillCircle(x, y, 1.6);
+    const chip = this.label(
+      195,
+      279,
+      "ISSUE #001  ·  YOUR FRIENDLY NEIGHBORHOOD RUNNER",
+      10,
+      "#9df8ec",
+    ).setOrigin(0.5);
+    const title = this.label(195, 307, "BOSTON", 66, "#fff0b8", true)
+      .setOrigin(0.5, 0)
+      .setAngle(-5);
+    const sub = this.label(195, 368, "SURFERS", 68, "#ffda4f", true)
+      .setOrigin(0.5, 0)
+      .setAngle(-5);
+    title.setShadow(4, 5, "#e64583", 0, true, true);
+    sub.setShadow(4, 5, "#e64583", 0, true, true);
+    const copy = this.label(
+      195,
+      464,
+      "DODGE TRAINS. STACK COINS. OWN THE T.",
+      13,
+      "#ffffff",
+    ).setOrigin(0.5);
+    const button = this.add.container(195, 567);
+    const shadow = this.add
+      .rectangle(5, 6, 296, 65, INK)
+      .setStrokeStyle(3, INK);
+    const face = this.add
+      .rectangle(0, 0, 296, 65, 0xffd34f)
+      .setStrokeStyle(4, INK)
+      .setInteractive({ useHandCursor: true });
+    button
+      .add([
+        shadow,
+        face,
+        this.label(0, -2, "LET’S ROLL!", 29, "#192042", true)
+          .setStroke("#192042", 0)
+          .setOrigin(0.5),
+      ])
+      .setAngle(-3);
+    const hint = this.label(
+      195,
+      624,
+      "ENTER TO START  /  SWIPE TO SURVIVE",
+      12,
+      "#fff6de",
+    )
+      .setStroke("#101631", 3)
+      .setOrigin(0.5);
+    face.on("pointerdown", () => this.startRun());
+    this.overlay.add([art, chip, title, sub, copy, button, hint]);
+    if (!this.reducedMotion)
+      this.tweens.add({
+        targets: button,
+        y: 560,
+        angle: -1,
+        duration: 850,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.InOut",
+      });
   }
 
   private startRun(): void {
     this.overlay.removeAll(true);
     this.model.start();
     this.playing(true);
-    this.game.canvas.focus();
+    this.game.canvas.focus({ preventScroll: true });
+    this.pop("LET’S GO!", 0xffd749, 380);
   }
 
-  private showIntro(): void {
-    const backdrop = this.add.rectangle(195, 423, 348, 344, INK, 0.97).setStrokeStyle(1, 0x41606b);
-    const chip = this.text(195, 294, 'YOUR NEXT STOP: A NEW HIGH SCORE', 10, '#8eabb7').setOrigin(0.5);
-    const title = this.text(195, 333, 'RIDE. RUN.\nREPEAT.', 42, '#ffffff').setOrigin(0.5, 0).setFontStyle('bold').setLineSpacing(-6);
-    const detail = this.text(195, 455, 'Three tracks. One city.\nCollect coins. Keep moving.', 16, '#b8cdd5').setOrigin(0.5).setAlign('center');
-    const button = this.add.rectangle(195, 531, 278, 51, this.accent).setInteractive({ useHandCursor: true });
-    const label = this.text(195, 531, 'START RUN', 16, '#ffffff').setOrigin(0.5).setFontStyle('bold');
-    button.on('pointerdown', () => this.startRun());
-    this.overlay.add([backdrop, chip, title, detail, button, label]);
+  private pop(message: string, color: number, y: number): void {
+    const x = 195 + (this.model.lane - 1) * 65;
+    const text = this.label(
+      x,
+      y,
+      message,
+      30,
+      `#${color.toString(16).padStart(6, "0")}`,
+      true,
+    )
+      .setOrigin(0.5)
+      .setAngle(-9)
+      .setDepth(9);
+    this.tweens.add({
+      targets: text,
+      y: y - (this.reducedMotion ? 0 : 45),
+      alpha: 0,
+      scale: this.reducedMotion ? 1 : 1.15,
+      duration: 650,
+      ease: "Cubic.Out",
+      onComplete: () => text.destroy(),
+    });
   }
 
-  private showGameOver(): void {
-    this.playing(false);
-    const background = this.add.rectangle(195, 423, 348, 350, INK, 0.98).setStrokeStyle(1, 0x41606b);
-    const title = this.text(195, 288, 'END OF THE LINE', 14, '#b8cdd5').setOrigin(0.5).setLetterSpacing(2);
-    const score = this.text(195, 350, String(this.model.score), 66, '#ffffff').setOrigin(0.5).setFontStyle('bold');
-    const stats = this.text(195, 414, `${Math.floor(this.model.distance)} METRES  ·  ${this.model.coins} COINS`, 13, '#ffd36e').setOrigin(0.5);
-    const reason = this.text(195, 463, this.model.reason, 14, '#b8cdd5').setOrigin(0.5);
-    const button = this.add.rectangle(195, 533, 278, 51, this.accent).setInteractive({ useHandCursor: true });
-    const label = this.text(195, 533, 'TRY AGAIN', 16, '#ffffff').setOrigin(0.5).setFontStyle('bold');
-    button.on('pointerdown', () => this.scene.restart({ seed: this.model.seed }));
-    this.overlay.add([background, title, score, stats, reason, button, label]);
+  private burst(x: number, y: number, color: number, count = 13): void {
+    if (this.reducedMotion) return;
+    for (let i = 0; i < count; i++) {
+      const angle = (i / count) * Math.PI * 2;
+      this.sparks.push({
+        x,
+        y,
+        vx: Math.cos(angle) * (70 + (i % 3) * 35),
+        vy: Math.sin(angle) * 100 - 80,
+        life: 0.65,
+        color,
+      });
+    }
   }
 
   update(_time: number, delta: number): void {
+    const dt = Math.min(delta, 50);
+    this.clock += dt;
     this.model.tick(delta);
-    this.visualLane += (this.model.lane - this.visualLane) * Math.min(1, delta / 85);
+    this.visualLane +=
+      (this.model.lane - this.visualLane) * Math.min(1, dt / 80);
     if (this.model.score !== this.lastScore) {
       this.lastScore = this.model.score;
-      this.hud.setText(String(this.model.score).padStart(5, '0'));
-      this.coinsText.setText(`${this.model.coins} COINS`);
+      this.hud.setText(String(this.model.score).padStart(5, "0"));
       this.opts.onScoreChange?.(this.model.score);
     }
-    this.speedText.setText(`${Math.floor(this.model.speed)} M/S`);
-    this.paint(this.model.durationMs);
+    if (this.model.coins > this.lastCoins) {
+      this.lastCoins = this.model.coins;
+      this.coinsText.setText(`★  ${this.model.coins}`);
+      this.burst(195 + (this.visualLane - 1) * 126, 610, 0xffdf55);
+      this.pop("+10! KA-CHING!", 0xffdf55, 510);
+      if (!this.reducedMotion)
+        this.tweens.add({
+          targets: this.coinsText,
+          scale: 1.2,
+          duration: 100,
+          yoyo: true,
+        });
+    }
+    this.speedText.setText(
+      `${Math.floor(this.model.speed)} M/S · ${this.model.speed > 22 ? "HERO MODE" : "LET’S ROLL"}`,
+    );
+    this.paint(dt);
     if (this.model.ended && !this.reported) {
       this.reported = true;
-      this.showGameOver();
+      this.playing(false);
+      this.pop("WHAM!", 0xff547f, 450);
+      this.burst(195 + (this.visualLane - 1) * 126, 620, 0xff6089, 22);
+      if (!this.reducedMotion) this.cameras.main.shake(160, 0.005);
+      // Parent UI owns immediate score + leaderboard and server-approved replays.
       this.opts.onGameOver(this.model.result());
     }
   }
 
-  private point(lane: number, ahead: number): { x: number; y: number; scale: number } {
-    const depth = Math.max(0, Math.min(1, 1 - ahead / TRACK.LOOKAHEAD));
-    const scale = 0.08 + depth * depth * 0.92;
-    return { x: 195 + (lane - 1) * 126 * scale,
-      y: TRACK.HORIZON + (TRACK.FEET - TRACK.HORIZON) * depth * depth, scale };
-  }
-
-  private polygon(points: number[], color: number, alpha = 1): void {
-    const g = this.art;
-    g.fillStyle(color, alpha).beginPath().moveTo(points[0]!, points[1]!);
-    for (let i = 2; i < points.length; i += 2) g.lineTo(points[i]!, points[i + 1]!);
-    g.closePath().fillPath();
-  }
-
-  private paint(time: number): void {
-    const g = this.art;
-    g.clear().fillStyle(0x080f17).fillRect(0, 0, VIEW.WIDTH, VIEW.HEIGHT);
-    g.fillStyle(0x101e28).fillRect(0, 150, 390, 575);
-    this.polygon([0, 150, 166, 239, 166, 260, 0, 715], 0x162731);
-    this.polygon([390, 150, 224, 239, 224, 260, 390, 715], 0x162731);
-    this.polygon([166, 245, 224, 245, 510, 725, -120, 725], 0x0a141d);
-    g.lineStyle(3, this.accent, 0.8).lineBetween(0, 365, 166, 247).lineBetween(390, 365, 224, 247);
-    g.lineStyle(2, 0x35505c, 0.7);
-    for (let rib = 0; rib < 7; rib++) {
-      const p = this.point(1, ((rib * 15 + 100 - this.model.distance % 15) % 105));
-      const width = 220 * p.scale;
-      g.strokeRect(195 - width, p.y - 210 * p.scale, width * 2, 240 * p.scale);
+  private paint(dt: number): void {
+    const lean = this.model.lane - this.visualLane;
+    drawWorld(
+      this.world,
+      this.model,
+      this.reducedMotion ? this.model.durationMs : this.clock,
+      lean,
+    );
+    drawHero(
+      this.hero,
+      195 + (this.visualLane - 1) * 126,
+      TRACK.FEET,
+      this.model,
+      this.reducedMotion ? this.model.durationMs : this.clock,
+      lean,
+    );
+    this.effects.clear();
+    this.sparks = this.sparks.filter((s) => s.life > 0);
+    for (const s of this.sparks) {
+      s.life -= dt / 1000;
+      s.x += (s.vx * dt) / 1000;
+      s.y += (s.vy * dt) / 1000;
+      s.vy += (210 * dt) / 1000;
+      this.effects
+        .fillStyle(s.color, Math.max(0, s.life / 0.65))
+        .fillRect(s.x, s.y, 5, 5);
     }
-    // Four rail pairs and moving sleepers produce depth without sprites/assets.
-    for (let lane = 0; lane < 3; lane++) {
-      const far = this.point(lane, TRACK.LOOKAHEAD), near = this.point(lane, -8);
-      g.lineStyle(2, 0x6d818c, 0.8);
-      g.lineBetween(far.x - 2, far.y, near.x - 30, 726).lineBetween(far.x + 2, far.y, near.x + 30, 726);
-      for (let sleeper = 0; sleeper < 15; sleeper++) {
-        const p = this.point(lane, (sleeper * 7 + 105 - this.model.distance % 7) % 105);
-        g.lineStyle(2 * p.scale + 0.5, 0x334854).lineBetween(p.x - 36 * p.scale, p.y, p.x + 36 * p.scale, p.y);
-      }
-    }
-    g.fillStyle(0x050b11).fillRect(164, 211, 62, 36);
-    g.fillStyle(this.accent).fillRect(183, 222, 24, 4);
-    // Draw distant objects first; only nearby rows need rendering.
-    const rows = this.model.rows.filter(row => row.distance - this.model.distance > -2 && row.distance - this.model.distance < TRACK.LOOKAHEAD + 6);
-    for (let i = rows.length - 1; i >= 0; i--) this.drawRow(rows[i]!);
-    this.drawRunner(time);
-    g.fillStyle(0x080f17).fillRect(0, 725, 390, 119);
-    g.lineStyle(1, 0x29414c).lineBetween(20, 724, 370, 724);
-    g.fillStyle(this.accent).fillRect(24, 93, Math.min(342, this.model.distance % 500 / 500 * 342), 3);
-  }
-
-  private drawRow(row: CourseRow): void {
-    const ahead = row.distance - this.model.distance;
-    const { x, y, scale: s } = this.point(row.lane, ahead);
-    const g = this.art;
-    if (!row.passed) {
-      if (row.hazard === 'train') {
-        g.fillStyle(0x142b34).fillRoundedRect(x - 42 * s, y - 128 * s, 84 * s, 128 * s, 9 * s);
-        g.lineStyle(2 * s, this.accent).strokeRoundedRect(x - 42 * s, y - 128 * s, 84 * s, 128 * s, 9 * s);
-        g.fillStyle(0x88b1bc).fillRect(x - 31 * s, y - 103 * s, 62 * s, 43 * s);
-        g.fillStyle(this.accent).fillRect(x - 40 * s, y - 40 * s, 80 * s, 12 * s);
-        g.fillStyle(0xffe7ad).fillCircle(x - 27 * s, y - 19 * s, 5 * s).fillCircle(x + 27 * s, y - 19 * s, 5 * s);
-      } else if (row.hazard === 'barrier') {
-        g.fillStyle(0xf19543).fillRoundedRect(x - 41 * s, y - 40 * s, 82 * s, 36 * s, 3 * s);
-        g.lineStyle(5 * s, 0x382716);
-        for (let stripe = -28; stripe <= 20; stripe += 16) g.lineBetween(x + stripe * s, y - 35 * s, x + (stripe + 13) * s, y - 10 * s);
-      } else {
-        g.fillStyle(0x8cb4c4).fillRect(x - 43 * s, y - 112 * s, 6 * s, 112 * s).fillRect(x + 37 * s, y - 112 * s, 6 * s, 112 * s);
-        g.fillStyle(0xf3c55b).fillRect(x - 43 * s, y - 77 * s, 86 * s, 24 * s);
-      }
-    }
-    if (!row.collected && ahead > 6) {
-      const coin = this.point(row.coinLane, ahead - 6);
-      g.fillStyle(0xffcd57).fillEllipse(coin.x, coin.y - 24 * coin.scale, 18 * coin.scale, 23 * coin.scale);
-      g.lineStyle(2 * coin.scale, 0x8c571c).lineBetween(coin.x, coin.y - 31 * coin.scale, coin.x, coin.y - 17 * coin.scale);
-    }
-  }
-
-  private drawRunner(time: number): void {
-    const g = this.art, x = 195 + (this.visualLane - 1) * 126;
-    const jump = this.model.jumpLeft > 0 ? Math.sin((1 - this.model.jumpLeft / 900) * Math.PI) * 115 : 0;
-    const duck = this.model.duckLeft > 0;
-    const stride = this.model.running ? Math.sin(time / 70) * 9 : 0;
-    const y = TRACK.FEET - jump;
-    g.fillStyle(0x000000, 0.45).fillEllipse(x, TRACK.FEET + 5, 55 - jump / 8, 14);
-    const bodyHeight = duck ? 24 : 43;
-    g.lineStyle(10, 0x93aab6).lineBetween(x - 8, y - 18, x - 12 - stride, y).lineBetween(x + 8, y - 18, x + 12 + stride, y);
-    g.fillStyle(this.accent).fillRoundedRect(x - 19, y - 23 - bodyHeight, 38, bodyHeight, 9);
-    g.fillStyle(0xe1eef0).fillRoundedRect(x - 10, y - 22 - bodyHeight, 20, bodyHeight - 6, 5);
-    g.lineStyle(7, this.accent).lineBetween(x - 20, y - 17 - bodyHeight, x - 26, y - 28 + stride / 2)
-      .lineBetween(x + 20, y - 17 - bodyHeight, x + 26, y - 28 - stride / 2);
-    g.fillStyle(0xe5b792).fillCircle(x, y - bodyHeight - 36, 13);
-    g.fillStyle(0x233745).fillRoundedRect(x - 14, y - bodyHeight - 49, 28, 11, 4);
   }
 }

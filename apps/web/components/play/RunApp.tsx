@@ -1,16 +1,21 @@
-'use client';
+"use client";
 
-import { FinishRunResponse, LINE_COLORS, MeResponse, StartRunResponse, type Ride } from '@cb/shared';
-import type { RunResult } from '@cb/game';
-import dynamic from 'next/dynamic';
-import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { api, errorText } from '@/lib/api-client';
-import { Board } from './Board';
-import { lastRunStore } from './storage';
-import { ErrorNote, GhostButton, PrimaryButton } from './ui';
+import {
+  FinishRunResponse,
+  LINE_COLORS,
+  MeResponse,
+  StartRunResponse,
+  type Ride,
+} from "@cb/shared";
+import type { RunResult } from "@cb/game";
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { api, errorText } from "@/lib/api-client";
+import { RunResults } from "./RunResults";
+import { lastRunStore } from "./storage";
 
-const GameCanvas = dynamic(() => import('./GameCanvas'), {
+const GameCanvas = dynamic(() => import("./GameCanvas"), {
   ssr: false,
   loading: () => <p className="p-6 text-center text-hud-dim">Loading game…</p>,
 });
@@ -18,11 +23,11 @@ const GameCanvas = dynamic(() => import('./GameCanvas'), {
 const noop = () => {};
 
 const REJECT_TEXT: Record<string, string> = {
-  too_short: 'Runs under 3 seconds don’t count.',
-  score_too_high: 'That score didn’t pass our checks.',
-  duration_mismatch: 'That run’s timing didn’t add up.',
-  ride_inactive: 'Your ride ended. Scan the kiosk again to keep playing.',
-  too_old: 'That run took too long to submit.',
+  too_short: "Runs under 3 seconds don’t count.",
+  score_too_high: "That score didn’t pass our checks.",
+  duration_mismatch: "That run’s timing didn’t add up.",
+  ride_inactive: "Your ride ended. Scan the kiosk again to keep playing.",
+  too_old: "That run took too long to submit.",
 };
 
 /** /play/run: full-screen game. POST /api/runs → play → POST finish → result overlay. */
@@ -31,6 +36,8 @@ export function RunApp() {
   const [ride, setRide] = useState<Ride | null>(null);
   const [run, setRun] = useState<StartRunResponse | null>(null);
   const [submittedScore, setSubmittedScore] = useState(0);
+  const [finishedRun, setFinishedRun] = useState<RunResult | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<FinishRunResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const starting = useRef(false);
@@ -42,8 +49,9 @@ export function RunApp() {
     starting.current = true;
     setError(null);
     try {
-      const r = await api('/api/runs', StartRunResponse, { body: { rideId } });
+      const r = await api("/api/runs", StartRunResponse, { body: { rideId } });
       setResult(null);
+      setFinishedRun(null);
       setSubmittedScore(0);
       setRun(r);
     } catch (err) {
@@ -57,12 +65,12 @@ export function RunApp() {
     // Lock page scroll while playing (iOS Safari swipes).
     const html = document.documentElement;
     const prev = [html.style.overflow, html.style.overscrollBehavior];
-    html.style.overflow = 'hidden';
-    html.style.overscrollBehavior = 'none';
+    html.style.overflow = "hidden";
+    html.style.overscrollBehavior = "none";
     (async () => {
       try {
-        const me = await api('/api/me', MeResponse);
-        if (!me.activeRide) return router.replace('/play');
+        const me = await api("/api/me", MeResponse);
+        if (!me.activeRide) return router.replace("/play");
         setRide(me.activeRide);
         await start(me.activeRide.id);
       } catch (err) {
@@ -78,56 +86,101 @@ export function RunApp() {
     async (res: RunResult) => {
       if (!run || !ride || submitted.current === run.runId) return;
       submitted.current = run.runId;
+      setSubmittedScore(Math.round(res.score));
+      setFinishedRun(res);
+      setSubmitting(true);
       try {
-        const r = await api(`/api/runs/${run.runId}/finish`, FinishRunResponse, {
-          body: { score: Math.round(res.score), coins: Math.round(res.coins), durationMs: Math.round(res.durationMs) },
+        const r = await api(
+          `/api/runs/${run.runId}/finish`,
+          FinishRunResponse,
+          {
+            body: {
+              score: Math.round(res.score),
+              coins: Math.round(res.coins),
+              durationMs: Math.round(res.durationMs),
+            },
+          },
+        );
+        lastRunStore.set({
+          rideId: ride.id,
+          bestThisRide: r.bestThisRide,
+          carRank: r.carRank,
+          carLeaderboard: r.carLeaderboard,
         });
-        lastRunStore.set({ rideId: ride.id, bestThisRide: r.bestThisRide, carRank: r.carRank, carLeaderboard: r.carLeaderboard });
         setSubmittedScore(Math.round(res.score));
         setResult(r);
       } catch (err) {
         setError(errorText(err));
+      } finally {
+        setSubmitting(false);
       }
     },
     [run, ride],
   );
 
   const color = ride ? LINE_COLORS[ride.line] : LINE_COLORS.Green;
+  const cached = finishedRun ? lastRunStore.get() : null;
+  const previousBoard =
+    cached?.rideId === ride?.id ? (cached?.carLeaderboard ?? []) : [];
 
   return (
-    <main className="fixed inset-0 flex flex-col bg-hud-bg" style={{ touchAction: 'none' }}>
+    <main
+      className="fixed inset-0 flex flex-col bg-hud-bg"
+      style={{ touchAction: "none" }}
+    >
       <div className="flex items-center justify-between px-4 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))] font-mono">
-        <button onClick={() => router.push('/play')} className="text-hud-dim">
+        <button onClick={() => router.push("/play")} className="text-hud-dim">
           ← Lobby
         </button>
       </div>
       <div className="relative min-h-0 flex-1">
-        {run && <GameCanvas seed={run.seed} lineColor={color} onScore={noop} onGameOver={onGameOver} />}
-        {(result || error) && (
-          <div className="absolute inset-0 flex items-end justify-center bg-hud-bg/80 p-4 backdrop-blur-sm sm:items-center">
-            <div className="flex w-full max-w-md flex-col gap-3 rounded-2xl border border-hud-border bg-hud-panel p-5">
-              {error && <ErrorNote>{error}</ErrorNote>}
-              {result && (
-                <>
-                  <h2 className="text-2xl font-semibold">
-                    {result.accepted ? `${submittedScore.toLocaleString()} points` : 'Run not counted'}
-                  </h2>
-                  {!result.accepted && result.reason && (
-                    <p className="text-hud-dim">{REJECT_TEXT[result.reason] ?? 'Try another run.'}</p>
-                  )}
-                  <p className="text-hud-dim">
-                    Best this ride: <span className="font-mono text-hud-text">{result.bestThisRide.toLocaleString()}</span>
-                    {result.carRank && <> · Car rank <span className="font-mono text-hud-text">#{result.carRank}</span></>}
-                  </p>
-                  <Board entries={result.carLeaderboard} highlightRank={result.carRank} />
-                </>
-              )}
-              {ride && (
-                <PrimaryButton color={color} onClick={() => start(ride.id)}>
-                  Play again
-                </PrimaryButton>
-              )}
-              <GhostButton onClick={() => router.push('/play')}>Back to lobby</GhostButton>
+        {run && (
+          <GameCanvas
+            seed={run.seed}
+            lineColor={color}
+            onScore={noop}
+            onGameOver={onGameOver}
+          />
+        )}
+        {finishedRun && (
+          <RunResults
+            run={{ ...finishedRun, score: submittedScore }}
+            entries={result?.carLeaderboard ?? previousBoard}
+            highlightRank={result?.carRank}
+            pending={submitting}
+            error={error}
+            source="ranked"
+            note={
+              result
+                ? result.accepted
+                  ? `Best this ride: ${result.bestThisRide.toLocaleString()}${result.carRank ? ` · Car rank #${result.carRank}` : ""}`
+                  : (REJECT_TEXT[result.reason ?? ""] ??
+                    "This run was not accepted. Try another run.")
+                : error
+                  ? "Your score is visible, but submission could not be confirmed."
+                  : undefined
+            }
+            onReplay={() => {
+              if (ride) void start(ride.id);
+            }}
+            onLeave={() => router.push("/play")}
+          />
+        )}
+        {error && !finishedRun && (
+          <div className="comic-results-backdrop">
+            <div className="comic-results">
+              <div className="comic-results-body">
+                <p className="comic-results-error">{error}</p>
+                <button
+                  className="comic-button"
+                  onClick={() => {
+                    if (ride) void start(ride.id);
+                    else router.push("/play");
+                  }}
+                >
+                  TRY AGAIN
+                </button>
+              </div>
             </div>
           </div>
         )}

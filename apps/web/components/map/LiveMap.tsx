@@ -8,7 +8,7 @@ export function LiveMap({ className = '' }: { className?: string }) {
   return (
     <div className={`relative h-full min-h-[360px] w-full ${className}`}>
       <GeoMap snapshot={snapshot} interactive />
-      <p className="pointer-events-none absolute bottom-1.5 right-3 font-mono text-xs text-hud-dim">
+      <p className="tracker-live-tag pointer-events-none absolute bottom-3 right-3 z-10">
         {mode === 'replay' ? 'replay' : 'live'} · {snapshot?.vehicles.length ?? 0} trains
       </p>
     </div>

@@ -11,19 +11,20 @@ export default function HomePage() {
     <main className="flex flex-1 flex-col">
       <TopBar current="map" />
       <div className="relative">
-        <div className="relative h-[70dvh] w-full overflow-hidden lg:h-[calc(100dvh-3rem)]">
+        <div className="relative h-[70dvh] w-full overflow-hidden lg:h-[calc(100dvh-4.25rem)]">
           <div className="absolute inset-0 [&>*]:h-full [&>*]:w-full">
             <LiveMap />
           </div>
           <div className="pointer-events-none absolute inset-0 flex flex-col justify-between gap-3 p-3 lg:p-5">
-            <div className="hud-glass pointer-events-auto max-w-sm self-start rounded-2xl px-4 py-3">
-              <h1 className="hud-glow text-xl font-semibold tracking-tight lg:text-2xl">Constant Buffers</h1>
-              <p className="mt-0.5 text-sm text-hud-dim">Every train on the T, live. Play on board, win your car.</p>
+            <div className="comic-site-card pointer-events-auto max-w-sm self-start px-4 py-4">
+              <p className="mb-2 font-mono text-xs font-bold uppercase tracking-widest text-cyan-200">ISSUE 001 / BOSTON EDITION</p>
+              <h1 className="comic-site-title">Your friendly<br/>neighborhood T.</h1>
+              <p className="mt-2 text-sm text-slate-200">Track the city. Ride the lines. Become the local legend.</p>
               <Link
-                href="/leaderboard"
+                href="/dev/game"
                 className="mt-2 inline-block font-mono text-xs uppercase tracking-[0.15em] text-mbta-green-bright hover:underline"
               >
-                Leaderboard →
+                PLAY BOSTON SURFERS
               </Link>
             </div>
             <div className="pointer-events-auto self-start">

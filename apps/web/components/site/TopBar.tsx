@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { LineBar } from '@/components/ui/Panel';
+import { ArcadeBrand } from '@/components/play/ArcadeBrand';
 
 /** Slim site header: brand left, nav right, MBTA line stripe underneath. */
 export function TopBar({ current }: { current?: 'map' | 'leaderboard' }) {
@@ -9,12 +10,10 @@ export function TopBar({ current }: { current?: 'map' | 'leaderboard' }) {
     }`;
   return (
     <header className="z-30 shrink-0 bg-hud-bg/90 backdrop-blur">
-      <div className="flex h-11 items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2 font-mono text-sm font-semibold tracking-tight">
-          <span className="h-2 w-2 rounded-full bg-mbta-green shadow-[0_0_10px_var(--mbta-green)]" />
-          Constant Buffers
-        </Link>
+      <div className="flex h-16 items-center justify-between bg-[#122448] px-4">
+        <ArcadeBrand/>
         <nav className="flex gap-1">
+          <Link href="/dev/game" className={link(false)}>Play</Link>
           <Link href="/" className={link(current === 'map')}>
             Map
           </Link>

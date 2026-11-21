@@ -104,8 +104,9 @@ export function SchematicMap({
   );
 
   return (
-    <svg viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`} className={`h-full w-full ${className}`} role="img" aria-label="Live MBTA map">
+    <svg viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`} className={`tracker-shell h-full w-full ${className}`} role="img" aria-label="Live MBTA map">
       <defs>
+        <pattern id="schematic-comic-grid" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M25 0H0V25" fill="none" stroke="#72bad7" strokeOpacity=".16" strokeWidth=".6"/></pattern>
         <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="4" result="b" />
           <feMerge>
@@ -114,6 +115,8 @@ export function SchematicMap({
           </feMerge>
         </filter>
       </defs>
+      <rect x={vb.x} y={vb.y} width={vb.w} height={vb.h} fill="#10244a"/>
+      <rect x={vb.x} y={vb.y} width={vb.w} height={vb.h} fill="url(#schematic-comic-grid)"/>
       {empty ? (
         <text x={layout.width / 2} y={layout.height / 2} textAnchor="middle" fill="#8a94ab" fontSize={28}>
           Run scripts/build-stations.ts to generate the schematic
