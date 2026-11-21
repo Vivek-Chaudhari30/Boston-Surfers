@@ -1,5 +1,24 @@
 # Firmware: sticker dispenser
 
+## Jeet's actual hardware: UNO Q only
+
+The working hardware demo is now [`unoq_web/`](unoq_web/README.md): a small
+HTTP service hosted on the UNO Q that lights its Linux-side green user LED.
+It is reachable over USB at `http://localhost:8765` while its server and ADB
+forwarding are running. It confirms light animations, not sticker delivery.
+All files stay within Jeet's firmware ownership boundary.
+
+The MCU is currently running [`unoq_idle/unoq_idle.ino`](unoq_idle/unoq_idle.ino)
+with a blank LED matrix. [`unoq_letters/`](unoq_letters/README.md) is the
+previously verified A–E physical display test.
+
+The experimental [`unoq_reward/`](unoq_reward/README.md) serial path uploaded
+but did not answer PING on this board. It is not the active integration.
+
+The remaining dispenser plan below assumes a **classic Uno plus additional
+parts**, which are not currently available. Its AVR commands do not apply
+to the UNO Q.
+
 **Owned by Jeet.** Arduino Uno + SG90 servo + push button. The sketch goes in `firmware/dispenser/dispenser.ino` (not written yet).
 
 ## Protocol v1 (summary; full spec in [ARCHITECTURE §5](../docs/ARCHITECTURE.md))

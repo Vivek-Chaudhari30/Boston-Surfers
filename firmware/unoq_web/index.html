@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>UNO Q · Reward light</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#090d11;color:#edf4ef}*{box-sizing:border-box}body{margin:0}main{max-width:760px;margin:auto;padding:56px 24px}header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #293b34;padding-bottom:24px}.brand{font-weight:800;letter-spacing:2px}.tag{color:#88a69a;font-size:14px}h1{font-size:clamp(36px,7vw,62px);line-height:1.05;letter-spacing:-2px;margin:42px 0 18px}p{color:#adc1b6;line-height:1.7;font-size:17px}section{border:1px solid #293b34;border-radius:20px;padding:24px;margin-top:28px;background:#101916}.status{display:flex;align-items:center;gap:10px;font-size:16px}.dot{width:12px;height:12px;border-radius:50%;background:#f4b25a}.online{background:#50ed9f;box-shadow:0 0 18px #50ed9f66}.controls{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}button{font:inherit;font-weight:650;border-radius:12px;padding:15px 20px;cursor:pointer;border:1px solid #41594c;background:transparent;color:#edf4ef}button.primary{background:#50ed9f;color:#062214;border-color:#50ed9f}button:disabled{opacity:.4;cursor:wait}button:focus-visible{outline:3px solid #a8ffd3;outline-offset:4px}.counter{font-size:54px;font-weight:750;letter-spacing:-2px;margin-top:20px}.muted{color:#88a69a;font-size:14px}#result{min-height:48px;line-height:1.6;margin-top:20px}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.8 ui-monospace,monospace;max-height:250px;overflow:auto;color:#c3dfce;margin:0}footer{margin-top:24px;color:#88a69a;font-size:14px;line-height:1.7}.instructions{margin:0;font-size:16px}
+</style>
+<main>
+<header><div class="brand">BOSTON SURFERS</div><div class="tag">UNO Q / HARDWARE LAB</div></header>
+<h1>A reward you<br>can actually see.</h1>
+<p>This page runs on your Arduino UNO Q. Trigger a reward and watch its <strong>green user LED</strong> turn on for 1.2 seconds.</p>
+<section aria-label="Board controls">
+<div class="status" role="status"><span id="dot" class="dot"></span><span id="connection">Checking board…</span></div>
+<div class="counter" id="count">—</div><div class="muted">Completed light confirmations this session</div>
+<div class="controls"><button class="primary" id="reward" disabled>Trigger reward light</button><button id="repeat" disabled>Repeat last reward</button><button id="check">Check connection</button></div>
+<div id="result" aria-live="polite">The LED stays off until you trigger a reward.</div>
+</section>
+<section><p class="instructions"><strong>Try the duplicate check.</strong> Trigger one reward, then repeat it. The count stays the same and the LED stays off.</p></section>
+<section aria-label="Device log"><pre id="log">Ready to connect.</pre></section>
+<footer>LED demonstration only. No sticker is dispensed and no traveller points are awarded. USB keeps this panel local to your Mac. The existing Next.js kiosk is a separate app; integration with it is the next step.</footer>
+</main>
+<script>
+const byId=id=>document.getElementById(id);let lastId=null,busy=false,connected=false;
+function log(text){byId('log').textContent=(new Date().toLocaleTimeString()+'  '+text+'\n'+byId('log').textContent).slice(0,6000)}
+function controls(){byId('reward').disabled=busy||!connected;byId('repeat').disabled=busy||!connected||!lastId;byId('check').disabled=busy}
+async function status(){try{const r=await fetch('/api/status');const s=await r.json();if(!r.ok||!s.connected)throw Error(s.error||'Board unavailable');connected=true;lastId=s.lastId;byId('count').textContent=s.count;byId('connection').textContent='Connected · Arduino UNO Q';byId('dot').className='dot online';log('Board connected · LED '+s.led)}catch(e){connected=false;byId('connection').textContent='Connection unavailable';byId('dot').className='dot';log(e.message)}controls()}
+async function reward(repeat=false){busy=true;controls();const id=repeat?lastId:crypto.randomUUID().replaceAll('-','').slice(0,12);byId('result').textContent=repeat?'Checking the previous reward…':'Watch the green user LED on your UNO Q…';log('REQUEST reward '+id);try{const r=await fetch('/api/reward',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});const s=await r.json();if(!r.ok)throw Error(s.error||'Reward failed');lastId=id;byId('count').textContent=s.count;byId('result').textContent=s.duplicate?'Already completed. No extra light or count.':'Light confirmation completed on the board.';log((s.duplicate?'DUPLICATE ':'DONE ')+id+' · count='+s.count)}catch(e){byId('result').textContent=e.message;log('ERROR '+e.message)}finally{busy=false;controls()}}
+byId('reward').onclick=()=>reward();byId('repeat').onclick=()=>reward(true);byId('check').onclick=status;status();
+</script>
+</html>
