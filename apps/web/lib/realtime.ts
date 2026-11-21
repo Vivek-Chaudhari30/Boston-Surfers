@@ -3,22 +3,42 @@
  * Payloads are HINTS ONLY: subscribers must refetch from the API, never trust the payload.
  */
 import type { ChangedPayload } from '@cb/shared';
+import { REALTIME_EVENT } from '@cb/shared';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 /**
- * Server: send `{ event: 'changed', payload: { kind } }` on `car:<carId>` or `mbta:daily`.
- * TODO: use supabase-js's REST broadcast path (channel.httpSend / send without subscribing —
- * check current supabase-js docs). Must never throw into the caller: realtime is best-effort.
+ * Server: send `{ event: 'changed', payload: { kind } }` over Realtime's REST endpoint
+ * (no websocket subscribe). Best-effort: never throws into the caller.
  */
-export async function broadcastChanged(_channel: string, _kind: ChangedPayload['kind']): Promise<void> {
-  // TODO
+export async function broadcastChanged(channel: string, kind: ChangedPayload['kind']): Promise<void> {
+  try {
+    const { db } = await import('./db');
+    const client = db();
+    const ch = client.channel(channel);
+    try {
+      const res = await ch.httpSend(REALTIME_EVENT, { kind } satisfies ChangedPayload, { timeout: 3000 });
+      if (!res.success) console.warn(`[realtime] ${channel} ${kind}: ${res.status} ${res.error}`);
+    } finally {
+      await client.removeChannel(ch);
+    }
+  } catch (err) {
+    console.warn(`[realtime] ${channel} ${kind} failed`, err);
+  }
 }
 
+let browserClient: SupabaseClient | null = null;
+
 /**
- * Client: subscribe to a channel with the anon key and call onChanged (debounce 300 ms upstream).
- * TODO: createClient(NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY).channel(name)
- *   .on('broadcast', { event: 'changed' }, ...).subscribe(). Return an unsubscribe fn.
- * Returns a no-op unsubscribe until implemented; 15 s polling covers it.
+ * Client: subscribe to `changed` events on a channel with the public key. Returns an unsubscribe fn.
+ * Without Supabase env vars it is a no-op; 15 s polling covers it.
  */
-export function subscribeChanged(_channel: string, _onChanged: () => void): () => void {
-  return () => {};
+export function subscribeChanged(channel: string, onChanged: () => void): () => void {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anon) return () => {};
+  browserClient ??= createClient(url, anon, { auth: { persistSession: false } });
+  const ch = browserClient.channel(channel).on('broadcast', { event: REALTIME_EVENT }, () => onChanged()).subscribe();
+  return () => {
+    void browserClient?.removeChannel(ch);
+  };
 }

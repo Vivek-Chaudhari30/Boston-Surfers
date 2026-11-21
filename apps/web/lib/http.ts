@@ -38,3 +38,17 @@ export function parseObject<S extends z.ZodType>(value: unknown, schema: S): Par
 export function queryObject(req: Request): Record<string, string> {
   return Object.fromEntries(new URL(req.url).searchParams);
 }
+
+/** Wrap a handler so thrown errors become `{ error, code }` 500s (and missing env a clear 503). */
+export function handle<A extends unknown[]>(fn: (...args: A) => Promise<Response>) {
+  return async (...args: A): Promise<Response> => {
+    try {
+      return await fn(...args);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.startsWith('Missing or invalid env vars')) return errorResponse(503, message, 'NOT_CONFIGURED');
+      console.error('[api]', err);
+      return errorResponse(500, 'internal error', 'INTERNAL');
+    }
+  };
+}
