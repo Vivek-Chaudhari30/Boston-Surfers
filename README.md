@@ -17,8 +17,12 @@ BostonHacks 2026: a smart kiosk for MBTA train cars. Riders see every train on t
 | Kiosk (`/kiosk/[carId]`) | ✅ Built and tested with the mock and (fake) HTTP dispensers |
 | Website (`/`, `/leaderboard`) | ✅ Live map + daily board |
 | Map data (`stations.json`, `layout.json`) | ✅ Generated from MBTA (118 stations) |
-| Game (`@cb/game`) | 🟡 Stub ("Tap to score", 10 s). **Jeet** replaces it, keeping `createRunner` |
+| Game (`@cb/game`) | ✅ Jeet's real seeded three-lane runner (swipe controls) is merged behind `createRunner` |
 | Dispenser hardware | 🟡 Jeet's Arduino **UNO Q** lights an LED over HTTP (`led-only`). Sticker mechanism not built yet |
+| Replay fallback | ✅ `demo.json` is a real 30 min / about 1.1 MB recording (`scripts/trim-replay.ts`); `?feed=replay` and the auto-fallback show 70+ trains |
+| Kiosk polish | ✅ Transfer card loading/empty/data states, dispenser status chip, bigger kiosk map variant, claim-code boxes, new-rider toast, ticker fix, Shift+D pin list with station names |
+| Phone and website polish | ✅ Lobby refresh after a run, name kept on re-signup plus name blocklist, how-to-play, leaderboard day navigation |
+| Docs | ✅ [docs/DEMO.md](docs/DEMO.md): demo script, judging URLs, checklist, fallback drill |
 | Not yet tested on real hardware | ⚪ webcam QR scan, UNO Q board, Web Serial Arduino, real iPhone/Android, Supabase Realtime delivery |
 
 ---
@@ -64,6 +68,7 @@ zod schemas for every endpoint (`api.ts`), serial protocol v1 + `parseLine()` (`
 |---|---|
 | `record-mbta.ts --minutes 60` | Records live snapshots every 10 s into `apps/web/public/replay/<date>.json` (raw responses go to gitignored `recordings/`) |
 | `build-stations.ts [--layout]` | Station order per route/direction from MBTA canonical patterns, plus a generated fisheye layout (regenerate only with `--layout`) |
+| `trim-replay.ts --in <raw> --minutes 30` | Cuts a raw recording down to `apps/web/public/replay/demo.json` (thinned frames, validated with `ReplayFile`); raw `20*.json` recordings are gitignored |
 | `seed-demo.ts [--clear]` | 4 fake riders with beatable scores (480 and below) on `green-3812`; rerun before judging (rides expire after 90 min) |
 
 ### Tests
@@ -129,7 +134,7 @@ pnpm kiosk                                   # prod build on :3000
 | `packages/game/` | Jeet | Phaser runner behind `createRunner()` |
 | `firmware/` | Jeet | Dispenser firmware (UNO Q web server, not pushed yet) |
 | `supabase/` | Vivek | SQL migrations |
-| `scripts/` | Vivek | Recorder, station builder, demo seed |
+| `scripts/` | Vivek | Recorder, replay trimmer, station builder, demo seed |
 
 ---
 
@@ -139,14 +144,16 @@ pnpm kiosk                                   # prod build on :3000
 - [ ] Push `firmware/unoq_web/` (`server.py`, `index.html`, `verify_live.py`); it isn't in the repo yet.
 - [ ] Confirm the HTTP contract in ARCHITECTURE §5.1 (contract changes need both owners).
 - [ ] Build the sticker mechanism (the board is LED-only today).
-- [ ] Replace the game stub with the real runner (IP2), keeping the `createRunner` signature.
+- [ ] Game HUD hard-codes "NEXT STOP / PARK STREET" (`RunnerScene.ts`): needs an additive `theme.nextStop` option in `createRunner` (contract change, both owners).
+- [ ] In mobile emulation, tapping the in-canvas START RUN did nothing (Enter worked): verify on a real iPhone and Android.
+- [ ] Canvas is a fixed 390x844, so wider phones are letterboxed.
+- [ ] `firmware/dispenser/` is empty (no Uno serial sketch; only needed for the `serial` path).
 
 **Vivek**
 - [ ] Test with real hardware: webcam QR scan from a phone screen, the UNO Q via `pnpm kiosk`, iPhone + Android on cellular.
 - [ ] Check that Supabase Realtime events arrive (the Shift+D panel counts them).
-- [ ] Cut about 30 min of today's recording into `apps/web/public/replay/demo.json` (the full 90 min is about 7 MB, too big for git).
 - [ ] Before judging: re-pin the kiosk's train (Shift+D) and rerun `seed-demo`.
-- [ ] Write `docs/DEMO.md` (demo script + fallback drill) and record the backup video.
+- [ ] Record the backup video (script and fallback drill are in `docs/DEMO.md`).
 - [ ] Optional polish: hand-tune `layout.json`. Known glitch: northbound Braintree-branch trains at JFK are drawn coming from Savin Hill.
 
 ## Known quirks
