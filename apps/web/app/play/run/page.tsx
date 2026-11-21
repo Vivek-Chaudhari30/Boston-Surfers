@@ -1,10 +1,6 @@
-import { Placeholder } from '@/components/ui/Panel';
+import { RunApp } from '@/components/play/RunApp';
 
-/** Full-screen game. TODO: POST /api/runs → mount createRunner (see /dev/game) → POST finish. */
+/** Full-screen game for the active ride. */
 export default function PlayRunPage() {
-  return (
-    <main className="flex h-dvh flex-col p-4">
-      <Placeholder>Full-screen runner: TODO</Placeholder>
-    </main>
-  );
+  return <RunApp />;
 }
