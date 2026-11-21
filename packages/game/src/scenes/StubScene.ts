@@ -41,7 +41,8 @@ export class StubScene extends Phaser.Scene {
       .text(cx, VIEW.HEIGHT * 0.7, '10.0 s', { fontFamily: 'system-ui, sans-serif', fontSize: '28px', color: '#9aa4b2' })
       .setOrigin(0.5);
 
-    this.startedAt = this.time.now;
+    // One clock for start and elapsed: scene.time.now and update()'s `time` can have different origins.
+    this.startedAt = performance.now();
     this.input.on('pointerdown', () => {
       if (this.over) return;
       this.score += STUB.POINTS_PER_TAP;
@@ -51,9 +52,9 @@ export class StubScene extends Phaser.Scene {
     this.opts.onScoreChange?.(0);
   }
 
-  update(time: number): void {
+  update(): void {
     if (this.over) return;
-    const elapsed = time - this.startedAt;
+    const elapsed = performance.now() - this.startedAt;
     const left = Math.max(0, STUB.RUN_MS - elapsed);
     this.timeText.setText(`${(left / 1000).toFixed(1)} s`);
     if (left <= 0) {
