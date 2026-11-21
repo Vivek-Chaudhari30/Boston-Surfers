@@ -9,7 +9,11 @@ import layoutJson from './layout.json';
 
 export type SchematicStation = { id: string; name: string };
 
-/** Ordered parent stations for one route and direction (direction_id 0 or 1). */
+/**
+ * Ordered parent stations for one route and direction (direction_id 0 or 1).
+ * Branching routes (Red) list each canonical pattern one after another; previousStation()
+ * uses the first occurrence, which gives the right neighbour on both branches.
+ */
 export type RouteStations = { '0': SchematicStation[]; '1': SchematicStation[] };
 
 export type StationsFile = {
@@ -27,8 +31,8 @@ export type LayoutFile = {
   height: number;
   /** Parent station id → canvas point. */
   stations: Record<string, Point>;
-  /** Route id → polyline of station ids (drawn in order). */
-  paths: Partial<Record<RouteId, string[]>>;
+  /** Route id → polylines of station ids (one per canonical pattern; Red has two branches). */
+  paths: Partial<Record<RouteId, string[][]>>;
 };
 
 export const stations = stationsJson as StationsFile;

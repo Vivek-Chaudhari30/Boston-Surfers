@@ -2,6 +2,670 @@
   "version": 1,
   "width": 1600,
   "height": 1000,
-  "stations": {},
-  "paths": {}
+  "stations": {
+    "place-alfcl": {
+      "x": 606,
+      "y": 248
+    },
+    "place-davis": {
+      "x": 655,
+      "y": 224
+    },
+    "place-portr": {
+      "x": 649,
+      "y": 258
+    },
+    "place-harsq": {
+      "x": 628,
+      "y": 331
+    },
+    "place-cntsq": {
+      "x": 655,
+      "y": 378
+    },
+    "place-knncl": {
+      "x": 710,
+      "y": 383
+    },
+    "place-chmnl": {
+      "x": 783,
+      "y": 366
+    },
+    "place-pktrm": {
+      "x": 891,
+      "y": 448
+    },
+    "place-dwnxg": {
+      "x": 972,
+      "y": 502
+    },
+    "place-sstat": {
+      "x": 1007,
+      "y": 533
+    },
+    "place-brdwy": {
+      "x": 953,
+      "y": 627
+    },
+    "place-andrw": {
+      "x": 933,
+      "y": 686
+    },
+    "place-jfk": {
+      "x": 957,
+      "y": 718
+    },
+    "place-shmnl": {
+      "x": 944,
+      "y": 748
+    },
+    "place-fldcr": {
+      "x": 903,
+      "y": 778
+    },
+    "place-smmnl": {
+      "x": 888,
+      "y": 794
+    },
+    "place-asmnl": {
+      "x": 897,
+      "y": 813
+    },
+    "place-nqncy": {
+      "x": 1011,
+      "y": 821
+    },
+    "place-wlsta": {
+      "x": 1034,
+      "y": 835
+    },
+    "place-qnctr": {
+      "x": 1065,
+      "y": 856
+    },
+    "place-qamnl": {
+      "x": 1048,
+      "y": 891
+    },
+    "place-brntn": {
+      "x": 1046,
+      "y": 930
+    },
+    "place-ogmnl": {
+      "x": 872,
+      "y": 70
+    },
+    "place-mlmnl": {
+      "x": 857,
+      "y": 94
+    },
+    "place-welln": {
+      "x": 831,
+      "y": 158
+    },
+    "place-astao": {
+      "x": 821,
+      "y": 187
+    },
+    "place-sull": {
+      "x": 811,
+      "y": 218
+    },
+    "place-ccmnl": {
+      "x": 842,
+      "y": 257
+    },
+    "place-north": {
+      "x": 929,
+      "y": 302
+    },
+    "place-haecl": {
+      "x": 959,
+      "y": 325
+    },
+    "place-state": {
+      "x": 992,
+      "y": 385
+    },
+    "place-chncl": {
+      "x": 895,
+      "y": 556
+    },
+    "place-tumnl": {
+      "x": 880,
+      "y": 583
+    },
+    "place-bbsta": {
+      "x": 770,
+      "y": 571
+    },
+    "place-masta": {
+      "x": 742,
+      "y": 604
+    },
+    "place-rugg": {
+      "x": 728,
+      "y": 623
+    },
+    "place-rcmnl": {
+      "x": 714,
+      "y": 645
+    },
+    "place-jaksn": {
+      "x": 716,
+      "y": 676
+    },
+    "place-sbmnl": {
+      "x": 710,
+      "y": 695
+    },
+    "place-grnst": {
+      "x": 708,
+      "y": 718
+    },
+    "place-forhl": {
+      "x": 702,
+      "y": 741
+    },
+    "place-wondl": {
+      "x": 1154,
+      "y": 175
+    },
+    "place-rbmnl": {
+      "x": 1160,
+      "y": 194
+    },
+    "place-bmmnl": {
+      "x": 1175,
+      "y": 234
+    },
+    "place-sdmnl": {
+      "x": 1174,
+      "y": 258
+    },
+    "place-orhte": {
+      "x": 1159,
+      "y": 266
+    },
+    "place-wimnl": {
+      "x": 1117,
+      "y": 279
+    },
+    "place-aport": {
+      "x": 1101,
+      "y": 300
+    },
+    "place-mvbcl": {
+      "x": 1075,
+      "y": 320
+    },
+    "place-aqucl": {
+      "x": 1038,
+      "y": 392
+    },
+    "place-gover": {
+      "x": 964,
+      "y": 362
+    },
+    "place-bomnl": {
+      "x": 908,
+      "y": 333
+    },
+    "place-boyls": {
+      "x": 857,
+      "y": 547
+    },
+    "place-armnl": {
+      "x": 786,
+      "y": 533
+    },
+    "place-coecl": {
+      "x": 748,
+      "y": 537
+    },
+    "place-hymnl": {
+      "x": 706,
+      "y": 539
+    },
+    "place-kencl": {
+      "x": 678,
+      "y": 519
+    },
+    "place-bland": {
+      "x": 663,
+      "y": 512
+    },
+    "place-buest": {
+      "x": 651,
+      "y": 505
+    },
+    "place-bucen": {
+      "x": 643,
+      "y": 500
+    },
+    "place-amory": {
+      "x": 624,
+      "y": 489
+    },
+    "place-babck": {
+      "x": 612,
+      "y": 483
+    },
+    "place-brico": {
+      "x": 601,
+      "y": 481
+    },
+    "place-harvd": {
+      "x": 590,
+      "y": 487
+    },
+    "place-grigg": {
+      "x": 584,
+      "y": 496
+    },
+    "place-alsgr": {
+      "x": 579,
+      "y": 496
+    },
+    "place-wrnst": {
+      "x": 574,
+      "y": 495
+    },
+    "place-wascm": {
+      "x": 572,
+      "y": 519
+    },
+    "place-sthld": {
+      "x": 567,
+      "y": 531
+    },
+    "place-chswk": {
+      "x": 559,
+      "y": 533
+    },
+    "place-chill": {
+      "x": 558,
+      "y": 543
+    },
+    "place-sougr": {
+      "x": 549,
+      "y": 536
+    },
+    "place-lake": {
+      "x": 533,
+      "y": 528
+    },
+    "place-smary": {
+      "x": 647,
+      "y": 531
+    },
+    "place-hwsst": {
+      "x": 638,
+      "y": 535
+    },
+    "place-kntst": {
+      "x": 631,
+      "y": 538
+    },
+    "place-stpul": {
+      "x": 625,
+      "y": 540
+    },
+    "place-cool": {
+      "x": 617,
+      "y": 544
+    },
+    "place-sumav": {
+      "x": 608,
+      "y": 547
+    },
+    "place-bndhl": {
+      "x": 602,
+      "y": 550
+    },
+    "place-fbkst": {
+      "x": 598,
+      "y": 551
+    },
+    "place-bcnwa": {
+      "x": 590,
+      "y": 549
+    },
+    "place-tapst": {
+      "x": 584,
+      "y": 552
+    },
+    "place-denrd": {
+      "x": 577,
+      "y": 554
+    },
+    "place-engav": {
+      "x": 573,
+      "y": 555
+    },
+    "place-clmnl": {
+      "x": 566,
+      "y": 556
+    },
+    "place-unsqu": {
+      "x": 711,
+      "y": 282
+    },
+    "place-lech": {
+      "x": 787,
+      "y": 283
+    },
+    "place-spmnl": {
+      "x": 843,
+      "y": 297
+    },
+    "place-fenwy": {
+      "x": 656,
+      "y": 539
+    },
+    "place-longw": {
+      "x": 646,
+      "y": 558
+    },
+    "place-bvmnl": {
+      "x": 641,
+      "y": 604
+    },
+    "place-brkhl": {
+      "x": 618,
+      "y": 600
+    },
+    "place-bcnfd": {
+      "x": 583,
+      "y": 565
+    },
+    "place-rsmnl": {
+      "x": 569,
+      "y": 562
+    },
+    "place-chhil": {
+      "x": 547,
+      "y": 590
+    },
+    "place-newto": {
+      "x": 502,
+      "y": 563
+    },
+    "place-newtn": {
+      "x": 488,
+      "y": 583
+    },
+    "place-eliot": {
+      "x": 475,
+      "y": 590
+    },
+    "place-waban": {
+      "x": 454,
+      "y": 561
+    },
+    "place-woodl": {
+      "x": 436,
+      "y": 532
+    },
+    "place-river": {
+      "x": 425,
+      "y": 515
+    },
+    "place-mdftf": {
+      "x": 687,
+      "y": 176
+    },
+    "place-balsq": {
+      "x": 693,
+      "y": 198
+    },
+    "place-mgngl": {
+      "x": 698,
+      "y": 216
+    },
+    "place-gilmn": {
+      "x": 723,
+      "y": 229
+    },
+    "place-esomr": {
+      "x": 749,
+      "y": 254
+    },
+    "place-prmnl": {
+      "x": 741,
+      "y": 573
+    },
+    "place-symcl": {
+      "x": 733,
+      "y": 589
+    },
+    "place-nuniv": {
+      "x": 718,
+      "y": 599
+    },
+    "place-mfa": {
+      "x": 702,
+      "y": 604
+    },
+    "place-lngmd": {
+      "x": 688,
+      "y": 608
+    },
+    "place-brmnl": {
+      "x": 677,
+      "y": 611
+    },
+    "place-fenwd": {
+      "x": 673,
+      "y": 613
+    },
+    "place-mispk": {
+      "x": 662,
+      "y": 611
+    },
+    "place-rvrwy": {
+      "x": 657,
+      "y": 616
+    },
+    "place-bckhl": {
+      "x": 664,
+      "y": 629
+    },
+    "place-hsmnl": {
+      "x": 668,
+      "y": 636
+    }
+  },
+  "paths": {
+    "Red": [
+      [
+        "place-alfcl",
+        "place-davis",
+        "place-portr",
+        "place-harsq",
+        "place-cntsq",
+        "place-knncl",
+        "place-chmnl",
+        "place-pktrm",
+        "place-dwnxg",
+        "place-sstat",
+        "place-brdwy",
+        "place-andrw",
+        "place-jfk",
+        "place-shmnl",
+        "place-fldcr",
+        "place-smmnl",
+        "place-asmnl"
+      ],
+      [
+        "place-alfcl",
+        "place-davis",
+        "place-portr",
+        "place-harsq",
+        "place-cntsq",
+        "place-knncl",
+        "place-chmnl",
+        "place-pktrm",
+        "place-dwnxg",
+        "place-sstat",
+        "place-brdwy",
+        "place-andrw",
+        "place-jfk",
+        "place-nqncy",
+        "place-wlsta",
+        "place-qnctr",
+        "place-qamnl",
+        "place-brntn"
+      ]
+    ],
+    "Orange": [
+      [
+        "place-ogmnl",
+        "place-mlmnl",
+        "place-welln",
+        "place-astao",
+        "place-sull",
+        "place-ccmnl",
+        "place-north",
+        "place-haecl",
+        "place-state",
+        "place-dwnxg",
+        "place-chncl",
+        "place-tumnl",
+        "place-bbsta",
+        "place-masta",
+        "place-rugg",
+        "place-rcmnl",
+        "place-jaksn",
+        "place-sbmnl",
+        "place-grnst",
+        "place-forhl"
+      ]
+    ],
+    "Blue": [
+      [
+        "place-wondl",
+        "place-rbmnl",
+        "place-bmmnl",
+        "place-sdmnl",
+        "place-orhte",
+        "place-wimnl",
+        "place-aport",
+        "place-mvbcl",
+        "place-aqucl",
+        "place-state",
+        "place-gover",
+        "place-bomnl"
+      ]
+    ],
+    "Green-B": [
+      [
+        "place-gover",
+        "place-pktrm",
+        "place-boyls",
+        "place-armnl",
+        "place-coecl",
+        "place-hymnl",
+        "place-kencl",
+        "place-bland",
+        "place-buest",
+        "place-bucen",
+        "place-amory",
+        "place-babck",
+        "place-brico",
+        "place-harvd",
+        "place-grigg",
+        "place-alsgr",
+        "place-wrnst",
+        "place-wascm",
+        "place-sthld",
+        "place-chswk",
+        "place-chill",
+        "place-sougr",
+        "place-lake"
+      ]
+    ],
+    "Green-C": [
+      [
+        "place-gover",
+        "place-pktrm",
+        "place-boyls",
+        "place-armnl",
+        "place-coecl",
+        "place-hymnl",
+        "place-kencl",
+        "place-smary",
+        "place-hwsst",
+        "place-kntst",
+        "place-stpul",
+        "place-cool",
+        "place-sumav",
+        "place-bndhl",
+        "place-fbkst",
+        "place-bcnwa",
+        "place-tapst",
+        "place-denrd",
+        "place-engav",
+        "place-clmnl"
+      ]
+    ],
+    "Green-D": [
+      [
+        "place-unsqu",
+        "place-lech",
+        "place-spmnl",
+        "place-north",
+        "place-haecl",
+        "place-gover",
+        "place-pktrm",
+        "place-boyls",
+        "place-armnl",
+        "place-coecl",
+        "place-hymnl",
+        "place-kencl",
+        "place-fenwy",
+        "place-longw",
+        "place-bvmnl",
+        "place-brkhl",
+        "place-bcnfd",
+        "place-rsmnl",
+        "place-chhil",
+        "place-newto",
+        "place-newtn",
+        "place-eliot",
+        "place-waban",
+        "place-woodl",
+        "place-river"
+      ]
+    ],
+    "Green-E": [
+      [
+        "place-mdftf",
+        "place-balsq",
+        "place-mgngl",
+        "place-gilmn",
+        "place-esomr",
+        "place-lech",
+        "place-spmnl",
+        "place-north",
+        "place-haecl",
+        "place-gover",
+        "place-pktrm",
+        "place-boyls",
+        "place-armnl",
+        "place-coecl",
+        "place-prmnl",
+        "place-symcl",
+        "place-nuniv",
+        "place-mfa",
+        "place-lngmd",
+        "place-brmnl",
+        "place-fenwd",
+        "place-mispk",
+        "place-rvrwy",
+        "place-bckhl",
+        "place-hsmnl"
+      ]
+    ]
+  }
 }
