@@ -4,7 +4,7 @@ import { LINE_COLORS, OkResponse, RedeemClaimResponse, lineOfRoute, isRouteId, t
 import { QRCodeSVG } from 'qrcode.react';
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { createDispenser, WebSerialDispenser, type Dispenser, type DispenserStatus } from '@/lib/adapters/dispenser';
+import { HttpDispenser, createDispenser, WebSerialDispenser, type Dispenser, type DispenserStatus } from '@/lib/adapters/dispenser';
 import { readFlags } from '@/lib/adapters/flags';
 import { createRiderInputs, type RiderInput } from '@/lib/adapters/rider-input';
 import { api, errorText } from '@/lib/api-client';
@@ -18,7 +18,7 @@ type Phase =
   | { kind: 'idle' }
   | { kind: 'redeeming' }
   | { kind: 'dispensing'; name: string }
-  | { kind: 'done'; name: string; ok: boolean };
+  | { kind: 'done'; name: string; ok: boolean; lightOnly: boolean };
 
 const REDEEM_TEXT: Record<string, string> = {
   invalid: 'That code isn’t valid',
@@ -43,12 +43,12 @@ export function KioskApp({ carId }: { carId: string }) {
   const color = LINE_COLORS[line];
 
   // ── Dispenser ──
-  const [dispenser] = useState<Dispenser>(() => createDispenser(flags));
+  const [dispenser] = useState<Dispenser>(() => createDispenser(flags, { kioskKey: params.get('key') }));
   const [dispStatus, setDispStatus] = useState<DispenserStatus>('disconnected');
   useEffect(() => {
     const off = dispenser.onStatus((s) => setDispStatus(s));
     if (dispenser instanceof WebSerialDispenser) void dispenser.autoConnect();
-    else void dispenser.connect();
+    else dispenser.connect().catch(() => undefined); // status listener shows the error
     return () => {
       off();
       void dispenser.disconnect();
@@ -83,7 +83,8 @@ export function KioskApp({ carId }: { carId: string }) {
           body: result.ok ? { status: 'done' } : { status: 'error', detail: result.error.slice(0, 200) },
           kioskKey,
         }).catch(() => undefined);
-        setPhase({ kind: 'done', name: r.displayName, ok: result.ok });
+        const lightOnly = result.ok && dispenser instanceof HttpDispenser && dispenser.lastMode === 'led-only';
+        setPhase({ kind: 'done', name: r.displayName, ok: result.ok, lightOnly });
         setTimeout(() => setPhase({ kind: 'idle' }), 7000);
         void reload();
       } catch (err) {
@@ -341,7 +342,13 @@ function WinnerOverlay({
       </>
     );
   } else if (phase.kind === 'done') {
-    body = phase.ok ? (
+    body = phase.ok && phase.lightOnly ? (
+      <>
+        <p className="text-7xl">💡</p>
+        <h2 className="mt-4 text-6xl font-semibold">Reward light on, {phase.name}!</h2>
+        <p className="mt-4 text-3xl text-hud-dim">Grab your sticker from the crew.</p>
+      </>
+    ) : phase.ok ? (
       <>
         <p className="text-7xl">🎉</p>
         <h2 className="mt-4 text-6xl font-semibold">Enjoy your sticker, {phase.name}!</h2>

@@ -367,6 +367,21 @@ export type TrainSnapshot = { fetchedAt: string; source: 'live' | 'replay'; vehi
 - **Handshake:** wait for `READY`. Mark the dispenser disconnected after 2 missed `PONG`s.
 - **Dispense:** `dispense(id)` resolves on `DONE <id>`, or fails on `ERR` or a 4 s timeout. It retries once with the same id; that's safe because the firmware is idempotent.
 
+### 5.1 Arduino UNO Q over HTTP (proposed by Jeet; both owners to confirm)
+Jeet's board is an **Arduino UNO Q** (Linux + MCU), not a plain Uno. Instead of USB serial it runs a Python HTTP server (`firmware/unoq_web/server.py`, Jeet's folder) that the Mac reaches over USB with Arduino's adb: `adb -s <serial> forward tcp:8765 tcp:8765`.
+
+| Request | Result |
+|---|---|
+| `GET /api/status` | device, LED state, busy, count, last id |
+| `POST /api/reward { id }` | `{ ok: true, id, duplicate: false, count, mode }` after the reward finishes |
+| same `id` as the last completed one | `{ ok: true, duplicate: true }`, no second reward (same idempotency as serial `DONE <id>`) |
+| while busy | `409 { code: "BUSY" }` |
+| `id` not 1–12 `[A-Za-z0-9]` | `400` |
+
+`mode: "led-only"` means the board lit a light and dispensed nothing; the kiosk then says "Reward light on, grab your sticker from the crew" and never claims physical delivery.
+
+**Kiosk side** (`?dispenser=http`): the browser's `HttpDispenser` (`lib/adapters/dispenser/http.ts`) calls our own `/api/device/status|reward`, which proxies to `UNOQ_URL` (default `http://127.0.0.1:8765`) and needs the kiosk key outside `next dev`. Heartbeat, 4 s timeout and one same-id retry match §5's host behavior. Because the board is only reachable from the kiosk Mac, **the kiosk runs on that Mac** with `pnpm kiosk` (production build on :3000). `apps/web/.env.production.local` sets `NEXT_PUBLIC_APP_URL` to the Vercel URL, so the join QR sends phones to the deployed site; both share one Supabase project and `SESSION_SECRET`, so join tokens and claims work across them. The serial transport (§5) stays supported.
+
 ---
 
 ## 6. Repo layout

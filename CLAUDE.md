@@ -28,6 +28,7 @@ pnpm dev                     # Next.js on http://localhost:3000
 pnpm dev --hostname 0.0.0.0  # so phones on the same Wi-Fi can open http://<mac-ip>:3000
 pnpm typecheck && pnpm lint && pnpm test
 pnpm build
+pnpm kiosk                   # kiosk on the MacBook: prod build on :3000, QR points phones at Vercel (needed for ?dispenser=http)
 
 # record MBTA data for replay (needs MBTA_API_KEY)
 pnpm tsx scripts/record-mbta.ts --minutes 60
@@ -40,7 +41,7 @@ arduino-cli monitor -p /dev/cu.usbmodemXXXX -c baudrate=115200
 ```
 
 ## Useful pages
-- `/kiosk/green-3812?key=<KIOSK_SECRET>`: the kiosk. Flags: `?feed=live|replay`, `?dispenser=serial|mock`, `?input=webcam|keyboard`, `?vehicle=<id>`. Press `Shift+D` for the hidden status panel (plain `D` is a claim-code letter). `?replay=<file>` picks a recording from `public/replay/`.
+- `/kiosk/green-3812?key=<KIOSK_SECRET>`: the kiosk. Flags: `?feed=live|replay`, `?dispenser=serial|http|mock` (`http` = Arduino UNO Q, ARCHITECTURE §5.1), `?input=webcam|keyboard`, `?vehicle=<id>`. Press `Shift+D` for the hidden status panel (plain `D` is a claim-code letter). `?replay=<file>` picks a recording from `public/replay/`.
 - `/play?car=green-3812&t=<token>`: the phone entry point (reached from the kiosk QR).
 - `/dev/dispenser`: Web Serial test panel (Chrome only). Needs no env vars.
 - `/dev/game`: game harness. Needs no env vars.

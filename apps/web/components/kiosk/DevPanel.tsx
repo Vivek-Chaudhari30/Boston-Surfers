@@ -2,7 +2,7 @@
 
 import { OkResponse, type TrainVehicle } from '@cb/shared';
 import { useEffect, useState } from 'react';
-import { WebSerialDispenser, type Dispenser, type DispenserStatus } from '@/lib/adapters/dispenser';
+import { HttpDispenser, WebSerialDispenser, type Dispenser, type DispenserStatus } from '@/lib/adapters/dispenser';
 import type { AdapterFlags } from '@/lib/adapters/flags';
 import { api, errorText } from '@/lib/api-client';
 
@@ -86,6 +86,7 @@ export function DevPanel(props: {
       <div className={row}>
         <span>
           Dispenser ({d.kind}): <b>{props.dispenserStatus}</b>
+          {d instanceof HttpDispenser && d.lastMode && <span className="block text-xs text-hud-dim">mode: {d.lastMode}</span>}
         </span>
         <span className="flex gap-2">
           <button className={btn} onClick={() => run('connect', () => d.connect())}>
@@ -98,7 +99,7 @@ export function DevPanel(props: {
           >
             test
           </button>
-          {d instanceof WebSerialDispenser && (
+          {(d instanceof WebSerialDispenser || d instanceof HttpDispenser) && (
             <button className={btn} onClick={() => run('ping', () => d.ping())}>
               ping
             </button>
