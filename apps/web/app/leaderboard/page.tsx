@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { DailyBoard } from '@/components/map/DailyBoard';
 import { LineLegend } from '@/components/map/LineLegend';
 import { LineBar, Panel } from '@/components/ui/Panel';
@@ -10,8 +11,19 @@ function shiftDay(day: string, delta: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+type Search = Promise<{ date?: string | string[] }>;
+
 /** All-MBTA daily leaderboard (Boston time). `?date=YYYY-MM-DD` browses past days. */
-export default async function LeaderboardPage({ searchParams }: { searchParams: Promise<{ date?: string | string[] }> }) {
+export default function LeaderboardPage({ searchParams }: { searchParams: Search }) {
+  // cacheComponents: searchParams is request data, so it must render inside a Suspense boundary.
+  return (
+    <Suspense fallback={<main className="flex flex-1 flex-col" />}>
+      <Leaderboard searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function Leaderboard({ searchParams }: { searchParams: Search }) {
   const { date: raw } = await searchParams;
   const today = bostonDate();
   const asked = Array.isArray(raw) ? raw[0] : raw;
