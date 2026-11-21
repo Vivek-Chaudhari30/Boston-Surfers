@@ -15,7 +15,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, errorText, toE164 } from '@/lib/api-client';
 import { Board } from './Board';
 import { ClaimView } from './ClaimView';
-import { claimStore, lastRunStore, type StoredClaim } from './storage';
+import { claimStore, lastRunStore, type LastRun, type StoredClaim } from './storage';
 import { Brand, Card, ErrorNote, GhostButton, PrimaryButton, Screen } from './ui';
 
 type EndResult = Exclude<EndRideResponse, { result: 'won' }>;
@@ -39,6 +39,7 @@ export function PlayApp() {
   const [endResult, setEndResult] = useState<EndResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [welcome, setWelcome] = useState<string | null>(null);
 
   const join = useCallback(
     async (carId: string, joinToken: string) => {
@@ -87,6 +88,8 @@ export function PlayApp() {
     try {
       const r = await api('/api/riders', CreateRiderResponse, { body: { displayName, phone: toE164(phone) } });
       setRider(r.rider);
+      // Known phone: the server keeps the stored name.
+      if (r.rider.displayName.toLowerCase() !== displayName.trim().toLowerCase()) setWelcome(r.rider.displayName);
       if (car && token) await join(car, token);
     } catch (err) {
       setError(errorText(err));
@@ -127,6 +130,7 @@ export function PlayApp() {
     <Screen>
       <Brand sub={ride ? carLabel(ride.carId) : car ? `Joining ${carLabel(car)}` : undefined} />
       {error && <ErrorNote>{error}</ErrorNote>}
+      {welcome && rider && !claim && <p className="text-lg">Welcome back, {welcome}!</p>}
 
       {claim ? (
         <ClaimView
@@ -206,13 +210,26 @@ function Lobby({ rider, ride, busy, onGetOff }: { rider: RiderPublic; ride: Ride
   const [confirming, setConfirming] = useState(false);
   useEffect(() => {
     if (!confirming) return;
-    const t = setTimeout(() => setConfirming(false), 4000);
+    const t = setTimeout(() => setConfirming(false), 6000);
     return () => clearTimeout(t);
   }, [confirming]);
-  const [last] = useState(() => {
-    const l = lastRunStore.get();
-    return l?.rideId === ride.id ? l : null;
-  });
+  const [last, setLast] = useState<LastRun | null>(null);
+  // Next 16 keeps /play mounted (hidden Activity) while on /play/run: re-read on show and on tab visibility.
+  useEffect(() => {
+    const read = () => {
+      const l = lastRunStore.get();
+      setLast(l?.rideId === ride.id ? l : null);
+    };
+    read();
+    document.addEventListener('visibilitychange', read);
+    window.addEventListener('focus', read);
+    window.addEventListener('pageshow', read);
+    return () => {
+      document.removeEventListener('visibilitychange', read);
+      window.removeEventListener('focus', read);
+      window.removeEventListener('pageshow', read);
+    };
+  }, [ride.id]);
   return (
     <>
       <Card title={`${rider.displayName} · this ride`}>
@@ -227,10 +244,15 @@ function Lobby({ rider, ride, busy, onGetOff }: { rider: RiderPublic; ride: Ride
           </div>
         </div>
       </Card>
-      {last && (
+      <p className="text-sm text-hud-dim">
+        How to play: swipe ←/→ to switch tracks, ↑ jump, ↓ duck. Top the car board, then tap <em>I’m getting off</em> to claim a sticker.
+      </p>
+      {last && last.carLeaderboard.length > 0 ? (
         <Card title="Car leaderboard">
           <Board entries={last.carLeaderboard} highlightRank={last.carRank} />
         </Card>
+      ) : (
+        <p className="text-center text-sm text-hud-dim">Play a run to put your name on the car board.</p>
       )}
       <PrimaryButton color={LINE_COLORS[ride.line]} disabled={busy} onClick={() => router.push('/play/run')}>
         ▶ Play
@@ -242,7 +264,11 @@ function Lobby({ rider, ride, busy, onGetOff }: { rider: RiderPublic; ride: Ride
       >
         {confirming ? 'Tap again to end your ride' : 'I’m getting off'}
       </GhostButton>
-      <p className="text-center text-sm text-hud-dim">Top of the car board when you get off wins a sticker.</p>
+      <p className="text-center text-sm text-hud-dim">
+        {confirming
+          ? 'Ending your ride is final. If you lead the car, you get a claim code for a sticker.'
+          : 'Top of the car board when you get off wins a sticker (you get a claim code).'}
+      </p>
     </>
   );
 }

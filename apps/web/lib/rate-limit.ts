@@ -4,7 +4,7 @@
  * Fluid Compute reuses instances, so this catches bursts; it is not a global guarantee.
  */
 export const LIMITS = {
-  signup: { limit: 5, windowMs: 60_000 }, // per IP
+  signup: { limit: 30, windowMs: 60_000 }, // per IP
   join: { limit: 10, windowMs: 60_000 }, // per rider
   startRun: { limit: 1, windowMs: 3_000 }, // per rider
   redeem: { limit: 10, windowMs: 60_000 }, // per kiosk

@@ -39,8 +39,7 @@ export function ClaimView({ claim, onDone }: { claim: StoredClaim; onDone: () =>
   if (shownStatus === 'redeemed') {
     return (
       <Card>
-        <p className="text-5xl">🎉</p>
-        <h2 className="mt-3 text-2xl font-semibold">Enjoy your sticker!</h2>
+        <h2 className="mt-3 text-2xl font-semibold">Claim confirmed! 🎉 Grab your sticker at the kiosk.</h2>
         <p className="mt-2 text-hud-dim">Thanks for riding. See you on the daily board.</p>
         <GhostButton className="mt-5" onClick={onDone}>
           Done

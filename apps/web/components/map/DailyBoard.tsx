@@ -6,15 +6,15 @@ import { api } from '@/lib/api-client';
 import { subscribeChanged } from '@/lib/realtime';
 
 /** Today's all-MBTA leaderboard. Polls every 30 s and refetches on `mbta:daily` hints. */
-export function useDaily() {
+export function useDaily(date?: string) {
   const [data, setData] = useState<DailyLeaderboardResponse | null>(null);
   const load = useCallback(async () => {
     try {
-      setData(await api('/api/leaderboard/daily', DailyLeaderboardResponse));
+      setData(await api(`/api/leaderboard/daily${date ? `?date=${date}` : ''}`, DailyLeaderboardResponse));
     } catch {
       /* keep the last board */
     }
-  }, []);
+  }, [date]);
   useEffect(() => {
     const first = setTimeout(load, 0);
     const t = setInterval(load, 30_000);
@@ -33,10 +33,10 @@ export function useDaily() {
   return data;
 }
 
-export function DailyBoard({ limit = 10 }: { limit?: number }) {
-  const data = useDaily();
-  if (!data) return <p className="text-hud-dim">Loading…</p>;
-  if (data.entries.length === 0) return <p className="text-hud-dim">No scores yet today. Hop on a train and play.</p>;
+export function DailyBoard({ limit = 10, date }: { limit?: number; date?: string }) {
+  const data = useDaily(date);
+  if (!data || (date && data.date !== date)) return <p className="text-hud-dim">Loading…</p>;
+  if (data.entries.length === 0) return <p className="text-hud-dim">{date ? 'No scores on this day.' : 'No scores yet today. Hop on a train and play.'}</p>;
   return (
     <ol className="flex flex-col gap-1">
       {data.entries.slice(0, limit).map((e) => (
