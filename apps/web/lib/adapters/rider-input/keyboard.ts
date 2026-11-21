@@ -25,7 +25,8 @@ export class KeyboardRiderInput implements RiderInput {
     this.handler = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
-      if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return; // Shift+D is the status panel
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.shiftKey && e.key.toLowerCase() === 'd') return; // Shift+D is the status panel
 
       if (e.key === 'Escape') this.setBuffer('');
       else if (e.key === 'Backspace') this.setBuffer(this.buffer.slice(0, -1));

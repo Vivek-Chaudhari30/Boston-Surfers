@@ -1,21 +1,23 @@
 'use client';
 
 import { DAILY_CHANNEL, DailyLeaderboardResponse, LINE_COLORS } from '@cb/shared';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '@/lib/api-client';
 import { subscribeChanged } from '@/lib/realtime';
 
 /** Today's all-MBTA leaderboard. Polls every 30 s and refetches on `mbta:daily` hints. */
 export function useDaily(date?: string) {
-  const [data, setData] = useState<DailyLeaderboardResponse | null>(null);
-  const load = useCallback(async () => {
-    try {
-      setData(await api(`/api/leaderboard/daily${date ? `?date=${date}` : ''}`, DailyLeaderboardResponse));
-    } catch {
-      /* keep the last board */
-    }
-  }, [date]);
+  const [res, setRes] = useState<{ forDate: string | undefined; data: DailyLeaderboardResponse } | null>(null);
   useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const data = await api(`/api/leaderboard/daily${date ? `?date=${date}` : ''}`, DailyLeaderboardResponse);
+        if (!cancelled) setRes({ forDate: date, data });
+      } catch {
+        /* keep the last board */
+      }
+    };
     const first = setTimeout(load, 0);
     const t = setInterval(load, 30_000);
     let debounce: ReturnType<typeof setTimeout> | undefined;
@@ -24,13 +26,15 @@ export function useDaily(date?: string) {
       debounce = setTimeout(load, 300);
     });
     return () => {
+      cancelled = true;
       clearTimeout(first);
       clearInterval(t);
       clearTimeout(debounce);
       off();
     };
-  }, [load]);
-  return data;
+  }, [date]);
+  // Never show a board fetched for a different day than the one requested.
+  return res && res.forDate === date ? res.data : null;
 }
 
 export function DailyBoard({ limit = 10, date }: { limit?: number; date?: string }) {

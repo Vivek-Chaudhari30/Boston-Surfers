@@ -22,8 +22,9 @@ BostonHacks 2026: a smart kiosk for MBTA train cars. Riders see every train on t
 | Replay fallback | ✅ `demo.json` is a real 30 min / about 1.1 MB recording (`scripts/trim-replay.ts`); `?feed=replay` and the auto-fallback show 70+ trains |
 | Kiosk polish | ✅ Transfer card loading/empty/data states, dispenser status chip, bigger kiosk map variant, claim-code boxes, new-rider toast, ticker fix, Shift+D pin list with station names |
 | Phone and website polish | ✅ Lobby refresh after a run, name kept on re-signup plus name blocklist, how-to-play, leaderboard day navigation |
+| Car Race (`/play/race`) | ✅ Every train car is a live multiplayer room: riders tap **🏁 Car Race** in the lobby, the kiosk hosts a 15 s countdown, everyone plays the same course, the kiosk shows live bars and an official podium (`GET /api/cars/:carId/race`). Race runs count on the car board. Supabase Realtime only, no DB or contract change. Tested with two racers |
 | Docs | ✅ [docs/DEMO.md](docs/DEMO.md): demo script, judging URLs, checklist, fallback drill |
-| Not yet tested on real hardware | ⚪ webcam QR scan, UNO Q board, Web Serial Arduino, real iPhone/Android, Supabase Realtime delivery |
+| Not yet tested on real hardware | ⚪ webcam QR scan, UNO Q board, Web Serial Arduino, real iPhone/Android, Supabase Realtime delivery on venue Wi-Fi |
 
 ---
 

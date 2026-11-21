@@ -82,9 +82,16 @@ export function PlayApp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on load
   }, []);
 
+  useEffect(() => {
+    if (!welcome) return;
+    const t = setTimeout(() => setWelcome(null), 6000);
+    return () => clearTimeout(t);
+  }, [welcome]);
+
   async function signUp(displayName: string, phone: string) {
     setBusy(true);
     setError(null);
+    setWelcome(null);
     try {
       const r = await api('/api/riders', CreateRiderResponse, { body: { displayName, phone: toE164(phone) } });
       setRider(r.rider);

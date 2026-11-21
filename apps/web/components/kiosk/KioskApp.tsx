@@ -46,7 +46,7 @@ export function KioskApp({ carId }: { carId: string }) {
   const youVehicleId = params.get('vehicle') ?? state?.car.vehicleId ?? null;
   const transfers = useTransfers(trains.mode === 'live' ? youVehicleId : null);
   const youTrain = trains.snapshot?.vehicles.find((v) => v.id === youVehicleId);
-  const pinnedMissing = useMissingFor(youVehicleId, !trains.snapshot || !!youTrain);
+  const pinnedMissing = useMissingFor(youVehicleId, trains.mode === 'replay' || !trains.snapshot || !!youTrain);
   const line: Line = state?.car.line ?? 'Green';
   const color = LINE_COLORS[line];
 
@@ -116,14 +116,15 @@ export function KioskApp({ carId }: { carId: string }) {
 
   // ── Rider input: keyboard always; webcam only while a winner is waiting ──
   const videoRef = useRef<HTMLVideoElement>(null);
-  const waitingForClaim = !!state?.pendingClaim && phase.kind === 'idle';
+  const hasPending = !!state?.pendingClaim;
+  const waitingForClaim = hasPending && phase.kind === 'idle';
   const [camError, setCamError] = useState<string | null>(null);
   const [camReady, setCamReady] = useState(false);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- a fresh scanner starts in the "starting" state
     setCamReady(false);
     setCamError(null);
-    const inputs: RiderInput[] = createRiderInputs(waitingForClaim ? videoRef.current : null, flags, {
+    const inputs: RiderInput[] = createRiderInputs(hasPending ? videoRef.current : null, flags, {
       onBuffer: setTyped,
       onCamReady: () => setCamReady(true),
       onCamError: (m) => setCamError(m),
@@ -131,7 +132,7 @@ export function KioskApp({ carId }: { carId: string }) {
     const cb = (code: string) => void onCode(code);
     for (const input of inputs) input.start(cb).catch(() => undefined);
     return () => inputs.forEach((i) => i.stop());
-  }, [waitingForClaim, flags, onCode]);
+  }, [hasPending, flags, onCode]);
 
   // ── Hidden status panel: press D ──
   const [panel, setPanel] = useState(false);
@@ -227,6 +228,8 @@ export function KioskApp({ carId }: { carId: string }) {
       <DispenserChip status={dispStatus} kind={dispenser.kind} />
       {riderToast && (
         <div
+          role="status"
+          aria-live="polite"
           className="fixed left-1/2 top-10 z-50 -translate-x-1/2 rounded-xl border-2 bg-hud-panel px-8 py-4 text-3xl font-semibold shadow-2xl"
           style={{ borderColor: color, color }}
         >
@@ -234,7 +237,7 @@ export function KioskApp({ carId }: { carId: string }) {
         </div>
       )}
       {toast && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 rounded-xl border border-mbta-red bg-hud-panel px-6 py-4 text-2xl shadow-2xl">
+        <div role="status" aria-live="polite" className="fixed bottom-20 left-1/2 -translate-x-1/2 rounded-xl border border-mbta-red bg-hud-panel px-6 py-4 text-2xl shadow-2xl">
           {toast}
         </div>
       )}
@@ -486,7 +489,7 @@ function WinnerOverlay({
         <h2 className="mt-3 text-6xl font-semibold">{pending.displayName} wins this car!</h2>
         <p className="mt-3 text-3xl text-hud-dim">{pending.score.toLocaleString()} points</p>
         <p className="mt-8 text-2xl">Show your claim QR to the camera, or type the 6-letter code.</p>
-        <div className={`mt-6 flex justify-center gap-3 ${codeBad ? 'animate-pulse' : ''}`} aria-label="Typed claim code">
+        <div className={`mt-6 flex justify-center gap-3 ${codeBad ? 'animate-pulse' : ''}`} role="group" aria-label="Typed claim code">
           {Array.from({ length: CLAIM_CODE_LENGTH }, (_, i) => (
             <span
               key={i}

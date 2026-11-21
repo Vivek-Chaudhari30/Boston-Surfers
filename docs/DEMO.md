@@ -29,6 +29,12 @@ A plain URL with no `?dispenser=` defaults to `serial`, which is **offline** unl
 | 1:15-1:40 | Judge taps "I'm getting off" twice. Kiosk shows "<name> wins this car!". Judge holds the claim QR to the webcam (or types the 6-character code). | Code boxes fill, redeem, the dispenser fires, the phone says "Claim confirmed". |
 | 1:40-2:00 | Show the ticker and the website (`/`, `/leaderboard`). Pitch: adapters swap the webcam for a CharlieCard tap, the MacBook for a car-mounted Pi screen, USB for an ESP32 over Wi-Fi. | Daily leaders, the same data on the public site. |
 
+### Optional: Car Race (30 s, if two judges are scanning)
+- Both judges tap **🏁 Car Race** in the phone lobby. The kiosk map turns into a 15 s countdown with their names.
+- At GO, each taps **START RUN**. Everyone plays the same course, and the kiosk shows live bars (💥 = crashed).
+- When everyone has crashed, the kiosk shows the official podium. Race scores count on the car board, so the sticker rule doesn't change.
+- Needs the kiosk page open (it hosts the race) and Supabase Realtime. If Realtime is down, the phone offers "Play solo".
+
 ## Pre-judging checklist
 
 Do this about 15 minutes before, and again if the kiosk was idle for over 90 minutes (rides expire after 90 min).

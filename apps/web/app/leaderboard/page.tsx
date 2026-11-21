@@ -3,13 +3,8 @@ import { Suspense } from 'react';
 import { DailyBoard } from '@/components/map/DailyBoard';
 import { LineLegend } from '@/components/map/LineLegend';
 import { LineBar, Panel } from '@/components/ui/Panel';
+import { parseDay, shiftDay } from '@/lib/day';
 import { bostonDate } from '@/lib/time';
-
-function shiftDay(day: string, delta: number): string {
-  const d = new Date(`${day}T12:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + delta);
-  return d.toISOString().slice(0, 10);
-}
 
 type Search = Promise<{ date?: string | string[] }>;
 
@@ -27,7 +22,7 @@ async function Leaderboard({ searchParams }: { searchParams: Search }) {
   const { date: raw } = await searchParams;
   const today = bostonDate();
   const asked = Array.isArray(raw) ? raw[0] : raw;
-  const day = asked && /^\d{4}-\d{2}-\d{2}$/.test(asked) && asked <= today ? asked : today;
+  const day = parseDay(asked, today);
   const isToday = day === today;
   const href = (d: string) => (d === today ? '/leaderboard' : `/leaderboard?date=${d}`);
   const nav = 'rounded-lg border border-hud-border px-3 py-1.5 font-mono text-sm';
