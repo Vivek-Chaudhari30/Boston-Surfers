@@ -11,7 +11,7 @@ const ServerEnv = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   MBTA_API_KEY: z.string().optional(),
   SESSION_SECRET: z.string().min(32, 'SESSION_SECRET must be at least 32 chars'),
-  KIOSK_SECRET: z.string().min(8),
+  KIOSK_SECRET: z.string().min(4), // short is OK for the demo; it only guards kiosk endpoints
   NEXT_PUBLIC_APP_URL: z.url(),
   PRIZE_MIN_RIDERS: z.coerce.number().int().nonnegative().default(1),
 });

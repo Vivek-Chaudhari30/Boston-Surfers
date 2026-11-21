@@ -32,6 +32,8 @@ export function RunApp() {
   const [result, setResult] = useState<FinishRunResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const starting = useRef(false);
+  // The game can replay a course locally (its own Retry / Enter). Only the first result per server run counts.
+  const submitted = useRef<string | null>(null);
 
   const start = useCallback(async (rideId: string) => {
     if (starting.current) return;
@@ -72,7 +74,8 @@ export function RunApp() {
 
   const onGameOver = useCallback(
     async (res: RunResult) => {
-      if (!run || !ride) return;
+      if (!run || !ride || submitted.current === run.runId) return;
+      submitted.current = run.runId;
       try {
         const r = await api(`/api/runs/${run.runId}/finish`, FinishRunResponse, {
           body: { score: Math.round(res.score), coins: Math.round(res.coins), durationMs: Math.round(res.durationMs) },
