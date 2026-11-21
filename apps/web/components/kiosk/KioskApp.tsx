@@ -14,6 +14,8 @@ import { useTrains } from '@/components/map/useTrains';
 import { useCarState, useJoinToken, useKioskKey, useMissingFor, useToast, useTransfers, useWindowCountdown } from './hooks';
 import { nextStationFromVehicle, ridersText, stationName } from './logic';
 import { DevPanel } from './DevPanel';
+import { RacePanel } from './RacePanel';
+import { useRaceHost } from './useRaceHost';
 
 type Phase =
   | { kind: 'idle' }
@@ -37,6 +39,7 @@ export function KioskApp({ carId }: { carId: string }) {
   const [riderToast, showRiderToast] = useToast(3000);
   const onRiderAboard = useCallback((n: number) => showRiderToast(`🚋 New rider aboard · ${ridersText(n)}`), [showRiderToast]);
   const { state, error: stateError, reload, realtimeHits } = useCarState(carId, kioskKey, onRiderAboard);
+  const race = useRaceHost(carId, kioskKey, reload);
   const { token, error: tokenError } = useJoinToken(carId, kioskKey);
   const trains = useTrains({ feed: flags.feed, replayFile: params.get('replay') ?? undefined });
   const daily = useDaily();
@@ -168,6 +171,7 @@ export function KioskApp({ carId }: { carId: string }) {
             {trains.mode === 'replay' ? 'REPLAY' : 'LIVE'} · {trains.snapshot?.vehicles.length ?? 0} trains
             {youTrain ? '' : youVehicleId ? ' · your train not in feed' : ' · press Shift+D to pin your train'}
           </div>
+          <RacePanel race={race} color={color} />
         </section>
 
         {/* Car panel: right 38% */}

@@ -329,6 +329,13 @@ export type TrainSnapshot = { fetchedAt: string; source: 'live' | 'replay'; vehi
 - **MBTA data:** polling only. The kiosk calls `/api/trains` every 10 s; the server caches upstream for 5 s.
 - Send broadcasts from route handlers through supabase-js's REST broadcast path (no subscribe needed). Check the current supabase-js docs for the exact call.
 
+### Car Race (additive, apps/web only)
+- Phones on `/play/race` join Supabase Presence on channel `race:<carId>` (`RacePresence`); present = ready. Protocol, constants and pure helpers live in `apps/web/lib/race.ts`; no change to the frozen `@cb/shared` contracts or the DB.
+- The kiosk hosts (`useRaceHost`): idle, countdown (`RACE.COUNTDOWN_MS`), running, results. It broadcasts `race` state every second and listens for phone `pos` broadcasts (live bars only, hints).
+- Each race run is a normal `/api/runs` run, so validation, the car board and stickers are unchanged.
+- `GET /api/cars/:carId/race?since=<ISO>&riders=<uuid,uuid>` (kiosk): official podium from finished `runs` started within the race window, best score per rider. Returns `{ standings: [{ riderId, displayName, score }] }`. If it fails the kiosk shows the live order marked unofficial.
+- Without Realtime env vars the feature is off.
+
 ### Join token and claim code
 - **Join token:** `base64url(carId + '.' + window) + '.' + hmac16`, where `window = floor(now / 30 s)`. The server accepts the current or previous window, so a token lives at most 60 s. The QR URL is `https://<app>/play?car=<carId>&t=<token>`.
 - **Claim code:** 6 characters from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`. The QR content is `CB1:<code>`; the kiosk ignores anything without the `CB1:` prefix. Codes expire after 120 s. `dispenseId` is the first 8 hex characters of the claim id.

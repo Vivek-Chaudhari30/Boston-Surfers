@@ -258,6 +258,13 @@ function Lobby({ rider, ride, busy, onGetOff }: { rider: RiderPublic; ride: Ride
         ▶ Play
       </PrimaryButton>
       <GhostButton
+        disabled={busy}
+        onClick={() => router.push('/play/race')}
+        style={{ borderColor: LINE_COLORS[ride.line], color: LINE_COLORS[ride.line] }}
+      >
+        🏁 Car Race · play live against this car
+      </GhostButton>
+      <GhostButton
         onClick={() => (confirming ? onGetOff() : setConfirming(true))}
         disabled={busy}
         className={confirming ? 'border-mbta-orange text-mbta-orange' : ''}
