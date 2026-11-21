@@ -38,3 +38,12 @@ body {
 .hud-glow {
   text-shadow: 0 0 12px rgb(0 132 61 / 0.6);
 }
+
+@keyframes ticker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}

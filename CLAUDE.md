@@ -40,7 +40,7 @@ arduino-cli monitor -p /dev/cu.usbmodemXXXX -c baudrate=115200
 ```
 
 ## Useful pages
-- `/kiosk/green-3812?key=<KIOSK_SECRET>`: the kiosk. Flags: `?feed=live|replay`, `?dispenser=serial|mock`, `?input=webcam|keyboard`, `?vehicle=<id>`. Press `D` for the hidden status panel.
+- `/kiosk/green-3812?key=<KIOSK_SECRET>`: the kiosk. Flags: `?feed=live|replay`, `?dispenser=serial|mock`, `?input=webcam|keyboard`, `?vehicle=<id>`. Press `Shift+D` for the hidden status panel (plain `D` is a claim-code letter). `?replay=<file>` picks a recording from `public/replay/`.
 - `/play?car=green-3812&t=<token>`: the phone entry point (reached from the kiosk QR).
 - `/dev/dispenser`: Web Serial test panel (Chrome only). Needs no env vars.
 - `/dev/game`: game harness. Needs no env vars.

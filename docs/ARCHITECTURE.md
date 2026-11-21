@@ -142,7 +142,7 @@ The kiosk picks implementations from URL flags: `?dispenser=serial|mock`, `?inpu
 4. **Output:** a `TrainSnapshot` (§4) that the kiosk and website both render.
 
 ### 2.4 How a kiosk knows which vehicle it is in
-- **Demo:** the `cars` row has a `vehicle_id`. The kiosk's hidden panel (press `D`) lists live vehicles on the car's line, and you click one to pin it. You can also pass `?vehicle=<id>`. In replay mode, pin a vehicle from the recording.
+- **Demo:** the `cars` row has a `vehicle_id`. The kiosk's hidden panel (press `Shift+D`; plain `D` is a claim-code letter) lists live vehicles on the car's line, and you click one to pin it. You can also pass `?vehicle=<id>`. In replay mode, pin a vehicle from the recording.
 - **Real deployment:** each kiosk is provisioned with its physical car number (for example 3812). Match it against MBTA vehicles: `label` (for example `3812-3706`) or `carriages[].label` where the API exposes it. Verify which field each line populates. Fallback: a GPS module on the kiosk's Raspberry Pi, matched to the nearest vehicle on the same route.
 
 ### 2.5 Transfer help
@@ -475,7 +475,7 @@ export const MAX_SCORE_PER_SEC = GAME.MAX_SPEED * GAME.SCORE_PER_METER + GAME.MA
 | 1:40–2:00 | The daily ticker and website. Then the pitch: adapters swap the webcam for a CharlieCard tap, the MacBook for a car-mounted Pi screen, and USB for an ESP32 over Wi-Fi. |
 
 ### Fallbacks
-Drill each one at least once before judging. The kiosk's hidden panel (press `D`) shows the feed, dispenser and realtime status and lets you toggle each.
+Drill each one at least once before judging. The kiosk's hidden panel (press `Shift+D`; plain `D` is a claim-code letter) shows the feed, dispenser and realtime status and lets you toggle each.
 
 | If this fails | Do this |
 |---|---|
@@ -512,7 +512,7 @@ Drill each one at least once before judging. The kiosk's hidden panel (press `D`
 | H12–15 | Sleep | Game polish on a real iPhone and Android over LAN |
 | H15–18 | Get off → claim → webcam scan → redeem → dispense (mock dispenser) | Sleep |
 | **H18** | **IP3: full flow end to end with real hardware** | **IP3** |
-| H18–19 | Daily leaderboard page + kiosk ticker, `seed-demo`, fallback flags, hidden `D` panel. | Physical kiosk setup: stand, "Car 3812" sign, sticker stock. |
+| H18–19 | Daily leaderboard page + kiosk ticker, `seed-demo`, fallback flags, hidden `Shift+D` panel. | Physical kiosk setup: stand, "Car 3812" sign, sticker stock. |
 | H19–20 | Anti-cheat checks, rate limits, write `docs/DEMO.md`. | Bug bash on phones |
 | **H20** | **Feature freeze** | |
 | H20–22 | Rehearse 5 times; drill every fallback; record the backup video at H21. | Same |
