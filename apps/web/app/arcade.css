@@ -833,7 +833,7 @@
 .display-intro h1 { margin: 6px 0; font-size: clamp(23px, 2.5vw, 37px); }
 .display-intro > p:not(.display-eyebrow) { font-size: 13px; color: #d2def0; line-height: 1.4; margin: 7px 0; }
 .display-intro a { color: #8ce5d3; font: 700 10px ui-monospace, monospace; letter-spacing: .08em; }
-.display-legend { position: absolute; left: 20px; bottom: 16px; }
+.display-legend { position: absolute; left: 20px; bottom: 16px; display: flex; flex-direction: column; align-items: flex-start; gap: 14px; z-index: 4; }
 .display-rail { position: absolute; right: 20px; top: 20px; bottom: 24px; width: clamp(290px, 23vw, 340px); display: flex; flex-direction: column; gap: 12px; }
 .display-rail > details { flex: 0 1 auto; min-height: 0; overflow: hidden; }
 .display-rail > details > summary { font-size: 21px; padding: 11px 14px; }
@@ -1044,3 +1044,19 @@
 .claim-camera-result .matrix-animation-status { font-size: 12px; color: #8ce5d3; margin: 0; }
 .claim-camera-result:has(.matrix-animation-status) { gap: 10px; }
 .claim-actions > .personal-button { font-size: 19px; }
+
+/* Kiosk map notices sit above the line legend without moving the map or rail. */
+.kiosk-notification-slot { width: min(410px, 36vw); }
+.kiosk-notification { --notice-accent: #8ce5d3; position: relative; display: grid; grid-template-columns: 32px 1fr; gap: 12px; overflow: hidden; padding: 18px 32px 20px 16px; border: 1px solid #8ce5d366; border-left: 4px solid var(--notice-accent); border-radius: 12px; background: linear-gradient(130deg, #1d3458f5, #0c1c35f5); box-shadow: 0 12px 32px #0008, 3px 3px 0 #071222; backdrop-filter: blur(12px); animation: kiosk-notice-arrive .45s cubic-bezier(.22,1,.36,1) both; }
+.kiosk-notification.delay { --notice-accent: #ffe175; border-color: #ffe17566; }
+.kiosk-notification.reward { --notice-accent: #ff82b3; border-color: #ff82b366; }
+.kiosk-notification-icon { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; color: #09172e; background: var(--notice-accent); font: 900 23px/1 system-ui, sans-serif; transform: rotate(-7deg); }
+.kiosk-notification-label { margin: 0 0 7px; color: var(--notice-accent); font: 700 9px/1.4 ui-monospace, monospace; letter-spacing: .1em; }
+.kiosk-notification h2 { margin: 0 0 7px; font-size: clamp(20px, 1.7vw, 26px); line-height: 1.05; color: #fff3bb; }
+.kiosk-notification-body { margin: 0; color: #d7e3f5; font-size: 12px; line-height: 1.55; }
+.kiosk-notification-close { position: absolute; right: 5px; top: 5px; width: 30px; height: 30px; border: 0; border-radius: 6px; background: transparent; color: #b9cce7; font-size: 23px; cursor: pointer; }
+.kiosk-notification-close:hover, .kiosk-notification-close:focus-visible { color: white; background: #ffffff1a; }
+.kiosk-notification-progress { position: absolute; height: 3px; bottom: 0; left: 0; right: 0; background: var(--notice-accent); transform-origin: left; animation: kiosk-notice-countdown 12s linear forwards; }
+@keyframes kiosk-notice-arrive { from { opacity: 0; transform: translateX(-24px) translateY(8px); } to { opacity: 1; transform: translate(0); } }
+@keyframes kiosk-notice-countdown { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) { .kiosk-notification, .kiosk-notification-progress { animation: none; } }

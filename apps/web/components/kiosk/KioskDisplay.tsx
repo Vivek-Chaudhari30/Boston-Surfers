@@ -16,6 +16,7 @@ import { api } from "@/lib/api-client";
 import { DevPanel } from "./DevPanel";
 import { useCarState, useJoinToken, useKioskKey, useWindowCountdown } from "./hooks";
 import { KioskHeader } from "./KioskHeader";
+import { KioskNotifications } from "./KioskNotifications";
 import { RaceRail } from "./RaceRail";
 import { useRaceHost } from "./useRaceHost";
 
@@ -150,6 +151,7 @@ export function KioskDisplay() {
           <Link href="/kiosk/rewards">DISCOVER LOCAL REWARDS ↗</Link>
         </div>
         <div className="display-legend">
+          <KioskNotifications />
           <LineLegend chips />
         </div>
         {kioskKey && (
