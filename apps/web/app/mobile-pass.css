@@ -1,0 +1,91 @@
+/* Rider phone extras. Builds on the passenger-* look in arcade.css. */
+.mobile-game-screen,
+.mobile-race-screen {
+  touch-action: none;
+  overscroll-behavior: none;
+}
+.mobile-race-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(#233754 1px, transparent 1px) 0 0 / 11px 11px, #0b1931;
+  color: #e8f0ff;
+  overflow: hidden;
+}
+.mobile-race-screen > header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: max(12px, env(safe-area-inset-top)) 14px 8px;
+  font: 700 11px ui-monospace, monospace;
+  color: #8ce5d3;
+  letter-spacing: 0.08em;
+}
+.mobile-race-screen > header a { color: #ffe175; padding: 10px 4px; font-size: 13px; }
+.mobile-race-body { position: relative; flex: 1; min-height: 0; }
+.mobile-race-panel {
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 18px 20px calc(18px + env(safe-area-inset-bottom));
+  touch-action: pan-y;
+}
+.mobile-lobby { width: 100%; max-width: 360px; display: grid; gap: 8px; }
+.mobile-lobby li {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+  border: 1px solid #47618a; border-radius: 12px; background: #1a2e50; font-weight: 700;
+}
+.mobile-lobby li.is-me { border-color: #ffe175; color: #ffe175; }
+.mobile-lobby li::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: #72f4dc; }
+.mobile-leave {
+  display: block; width: 100%; margin-top: 18px; border: 2px solid #0b1931; border-radius: 12px;
+  background: #ff6a94; box-shadow: 0 4px 0 #050d20; padding: 16px; min-height: 56px;
+  color: #10203d; font-size: 18px; font-weight: 900; text-align: center; cursor: pointer;
+}
+.mobile-leave:disabled { opacity: 0.5; }
+.mobile-leave-wrap { width: 100%; max-width: 360px; }
+.mobile-leave-confirm { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mobile-leave-confirm .personal-button { margin-top: 10px; font-size: 16px; }
+.mobile-leave-overlay {
+  position: fixed; inset: 0; z-index: 60; overflow-y: auto; touch-action: pan-y;
+  background: #0b1931f2; padding: max(20px, env(safe-area-inset-top)) 20px 40px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center;
+}
+.mobile-leave-overlay h2 { color: #ffe175; font-size: 34px; line-height: 1.1; }
+.mobile-leave-overlay p { color: #c9d6ec; font-size: 16px; line-height: 1.5; max-width: 340px; }
+.mobile-welcome {
+  border: 1px solid #72f4dc; background: #12353a; color: #bff7ea; border-radius: 11px;
+  padding: 12px 14px; font-size: 14px; font-weight: 700; margin-bottom: 18px;
+}
+.mobile-types { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0; }
+.mobile-types > div {
+  border: 1px solid #47618a; border-radius: 12px; background: #1a2e50; padding: 12px; text-align: center;
+}
+.mobile-types .icon { font-size: 28px; display: block; }
+.mobile-types strong { display: block; color: #8ce5d3; font-size: 26px; }
+.mobile-types span.name { font-size: 11px; color: #b9c9df; }
+.mobile-chip {
+  display: inline-block; border-radius: 99px; padding: 3px 10px; font: 700 10px ui-monospace, monospace;
+  letter-spacing: 0.06em; background: #304365; color: #ffe175;
+}
+.mobile-chip.ready { background: #72f4dc; color: #10203d; }
+.mobile-chip.expired { background: #5a2c3c; color: #ffb3c6; }
+.mobile-stats-5 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 16px 0; }
+.mobile-stats-5 > div {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 6px;
+  border: 1px solid #47618a; border-radius: 12px; background: #1a2e50;
+}
+.mobile-stats-5 strong { color: #8ce5d3; font-size: 22px; }
+.mobile-stats-5 span { color: #b9c9df; font-size: 10px; text-align: center; }
+.mobile-link-button {
+  display: block; width: 100%; margin-top: 14px; padding: 14px; min-height: 48px; border-radius: 10px;
+  border: 2px solid #ff6a94; background: transparent; color: #ff9db9; font-weight: 800; font-size: 15px;
+  text-align: center; cursor: pointer;
+}
