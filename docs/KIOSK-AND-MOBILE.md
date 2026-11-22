@@ -22,3 +22,7 @@ Every discount and score threshold is a proposed demo offer, not an actual promo
 ## Demo
 
 Bind the local preview to `0.0.0.0`. QR substitutes the Mac's LAN IPv4 for localhost. Phones need the same reachable network; venue client isolation may block it. Practice and catalogue work without Supabase. Daily standings, ranked history and real claims require the backend. Private pages show sync failure rather than invented scores or winnings.
+
+## Reward camera
+
+The title bar now includes **Claim your reward** at `/kiosk/claim`. It opens the Mac camera, reads existing `CB1:<code>` claims and confirms the native UNO Q acknowledgement before reporting a ranked reward complete. `/mobile/camera-check` is a non-redeemable camera diagnostic. See [REWARD-CAMERA-HANDOFF.md](REWARD-CAMERA-HANDOFF.md) for setup and Vivek's backend boundary.

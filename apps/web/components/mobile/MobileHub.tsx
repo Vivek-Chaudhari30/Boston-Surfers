@@ -1,10 +1,11 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { rewardCatalog } from "@/lib/reward-catalog";
 import type { Award } from "@/lib/awards-logic";
 import { ArcadeBrand } from "@/components/play/ArcadeBrand";
-import { ClaimView } from "@/components/play/ClaimView";
+import { RewardClaim } from "./RewardClaim";
 import { LeaveTrain } from "./LeaveTrain";
 import { MobileNav, type MobileSection } from "./MobileNav";
 import { readPersonalPractice, type PersonalPractice } from "./practice-history";
@@ -54,9 +55,9 @@ function SignupCard({
   );
 }
 
-function awardStatus(a: Award, now: number): "Collected" | "Ready" | "Expired" | null {
+function awardStatus(a: Award, now: number): "Collected" | "Processing" | "Ready" | "Expired" | null {
   if (!a.claim) return null;
-  if (a.claim.redeemedAt) return "Collected";
+  if (a.claim.redeemedAt) return a.claim.dispenseStatus === "done" ? "Collected" : "Processing";
   return Date.parse(a.claim.expiresAt) > now ? "Ready" : "Expired";
 }
 
@@ -65,11 +66,15 @@ const fmtTime = (iso: string) =>
   new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
 export function MobileHub({ section }: { section: MobileSection }) {
+  const router = useRouter();
+  const params = useSearchParams();
   const pass = useMobilePass();
   const { me, profile, loading, car, token } = pass;
   const [practice, setPractice] = useState<PersonalPractice[]>([]);
   const [now, setNow] = useState(0);
   const [claim, setClaim] = useState<{ code: string; expiresAt: string } | null>(null);
+
+  const selectedClaim = claim?.code ?? params.get("claim");
 
   useEffect(() => {
     const refresh = () => {
@@ -249,11 +254,13 @@ export function MobileHub({ section }: { section: MobileSection }) {
 
         {section === "rewards" && (
           <>
-            {claim && (
-              <ClaimView
-                claim={claim}
+            {selectedClaim && (
+              <RewardClaim
+                key={selectedClaim}
+                code={selectedClaim}
                 onDone={() => {
                   setClaim(null);
+                  router.replace("/mobile/rewards");
                   void pass.refresh();
                 }}
               />
@@ -306,12 +313,12 @@ export function MobileHub({ section }: { section: MobileSection }) {
                           {a.offers.map((o) => (
                             <p key={o}>Unlocks: {o}</p>
                           ))}
-                          {a.claim && status === "Ready" && (
+                          {a.claim && (status === "Ready" || status === "Processing") && (
                             <button
                               className="personal-button"
                               onClick={() => setClaim({ code: a.claim!.code, expiresAt: a.claim!.expiresAt })}
                             >
-                              SHOW BACKUP CODE
+                              SHOW MY REWARD QR
                             </button>
                           )}
                         </article>

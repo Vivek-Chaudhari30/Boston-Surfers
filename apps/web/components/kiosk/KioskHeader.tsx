@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { ArcadeBrand } from "@/components/play/ArcadeBrand";
 
-export function KioskHeader({ current }: { current: "map" | "rewards" }) {
+export function KioskHeader({
+  current,
+}: {
+  current: "map" | "rewards" | "claim";
+}) {
   return (
     <header className="display-header">
       <ArcadeBrand href="/kiosk" />
@@ -18,6 +22,13 @@ export function KioskHeader({ current }: { current: "map" | "rewards" }) {
           aria-current={current === "rewards" ? "page" : undefined}
         >
           REWARDS ↗
+        </Link>
+        <Link
+          href="/kiosk/claim"
+          className="claim-header-link"
+          aria-current={current === "claim" ? "page" : undefined}
+        >
+          CLAIM YOUR REWARD ◎
         </Link>
       </nav>
     </header>

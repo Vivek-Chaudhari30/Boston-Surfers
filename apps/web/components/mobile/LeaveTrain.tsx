@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { EndRideResponse } from "@cb/shared";
 import { ApiClientError, api, errorText } from "@/lib/api-client";
-import { ClaimView } from "@/components/play/ClaimView";
+import { RewardClaim } from "./RewardClaim";
 
 type Stage = "idle" | "confirm" | "busy" | "result";
 
@@ -45,11 +45,11 @@ export function LeaveTrain({
         {result.result === "won" && (
           <>
             <h2 className="comic-type">YOU’RE #1 IN THIS CAR</h2>
-            <p>Collect your voucher at the kiosk screen.</p>
+            <p>Tap Claim your reward on the laptop, then show this QR to its camera.</p>
             <p style={{ fontSize: 13, opacity: 0.8 }}>
-              Backup code if the kiosk doesn’t react:
+              Keep this page open until the kiosk confirms your reward.
             </p>
-            <ClaimView claim={result.claim} onDone={onClose} />
+            <RewardClaim code={result.claim.code} onDone={onClose} />
           </>
         )}
         {result.result === "not_leader" && (
@@ -116,7 +116,7 @@ export function LeaveTrain({
           disabled={stage === "busy"}
           onClick={() => setStage("confirm")}
         >
-          {stage === "busy" ? "CHECKING…" : "I’M LEAVING THE TRAIN"}
+          {stage === "busy" ? "CHECKING…" : "I AM GETTING OFF"}
         </button>
       )}
     </div>

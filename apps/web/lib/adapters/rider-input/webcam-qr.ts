@@ -1,6 +1,6 @@
-import type QrScannerType from 'qr-scanner';
-import { codeFromQr } from './claim-code';
-import type { RiderInput } from './types';
+import type QrScannerType from "qr-scanner";
+import { codeFromQr } from "./claim-code";
+import type { RiderInput } from "./types";
 
 /**
  * Webcam QR scanner (qr-scanner / nimiq). Accepts only `CB1:<code>` payloads.
@@ -8,7 +8,7 @@ import type { RiderInput } from './types';
  * code within 5 s are dropped.
  */
 export class WebcamQrRiderInput implements RiderInput {
-  readonly kind = 'webcam-qr' as const;
+  readonly kind = "webcam-qr" as const;
   private scanner: QrScannerType | null = null;
   private lastCode: { code: string; at: number } | null = null;
 
@@ -17,27 +17,51 @@ export class WebcamQrRiderInput implements RiderInput {
 
   constructor(
     private readonly video: HTMLVideoElement,
-    private readonly hooks: { onReady?: () => void; onError?: (message: string) => void } = {},
+    private readonly hooks: {
+      onReady?: () => void;
+      onError?: (message: string) => void;
+      onCameraCheck?: () => void;
+    } = {},
   ) {}
 
   async start(onCode: (code: string) => void): Promise<void> {
     this.stop();
     const gen = this.generation;
+    if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+      this.hooks.onError?.(
+        "This browser cannot provide camera access. Open http://localhost:3001/kiosk/claim in Chrome on this Mac.",
+      );
+      return;
+    }
     try {
       // Dynamic import: qr-scanner touches browser globals at import time.
-      const { default: QrScanner } = await import('qr-scanner');
+      const { default: QrScanner } = await import("qr-scanner");
       if (gen !== this.generation) return;
       const scanner = new QrScanner(
         this.video,
         (result) => {
+          if (gen !== this.generation) return;
+          if (result.data.trim() === "CB-CAMERA-CHECK") {
+            this.hooks.onCameraCheck?.();
+            return;
+          }
           const code = codeFromQr(result.data);
           if (!code) return;
           const now = Date.now();
-          if (this.lastCode && this.lastCode.code === code && now - this.lastCode.at < 5000) return;
+          if (
+            this.lastCode &&
+            this.lastCode.code === code &&
+            now - this.lastCode.at < 5000
+          )
+            return;
           this.lastCode = { code, at: now };
           onCode(code);
         },
-        { preferredCamera: 'user', maxScansPerSecond: 8, returnDetailedScanResult: true },
+        {
+          preferredCamera: "user",
+          maxScansPerSecond: 8,
+          returnDetailedScanResult: true,
+        },
       );
       this.scanner = scanner;
       await scanner.start();

@@ -36,11 +36,16 @@ const NextClaim = z.union([
 
 type Voucher = { name: string; score: number; state: "working" | "done" | "offline" };
 
-/** Laptop display for the car. Jeet's map/leaderboard layout + rotating car QR, race rail, auto voucher. */
+/** Laptop display for the car. Jeet's map/leaderboard layout + rotating car QR and race rail. Camera claims are the default; legacy auto-vouchers require ?claimMode=auto. */
 export function KioskDisplay() {
   const params = useSearchParams();
   const carId = params.get("car") ?? DEFAULT_CAR;
-  const flags = useMemo(() => readFlags(new URLSearchParams(params.toString())), [params]);
+  const flags = useMemo(() => {
+    const local = new URLSearchParams(params.toString());
+    if (!local.has("dispenser")) local.set("dispenser", "http");
+    return readFlags(local);
+  }, [params]);
+  const automaticVouchers = params.get("claimMode") === "auto";
   const kioskKey = useKioskKey(params.get("key"));
 
   const { state, reload, realtimeHits } = useCarState(carId, kioskKey);
@@ -105,14 +110,14 @@ export function KioskDisplay() {
 
   const hasPending = !!state?.pendingClaim;
   useEffect(() => {
-    if (!hasPending) return;
+    if (!hasPending || !automaticVouchers) return;
     const first = setTimeout(() => void tryNext(), 0);
     const t = setInterval(() => void tryNext(), CLAIM_POLL_MS);
     return () => {
       clearTimeout(first);
       clearInterval(t);
     };
-  }, [hasPending, tryNext]);
+  }, [hasPending, automaticVouchers, tryNext]);
 
   // ── Hidden status panel: Shift+D ──
   const [panel, setPanel] = useState(false);
