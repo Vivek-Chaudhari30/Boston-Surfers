@@ -4,6 +4,7 @@ import { LiveMap } from '@/components/map/LiveMap';
 import { HowItWorks } from '@/components/site/HowItWorks';
 import { LeadersCard } from '@/components/site/LeadersCard';
 import { TopBar } from '@/components/site/TopBar';
+import { PlayQrCard } from '@/components/site/PlayQrCard';
 
 /** Website: full-bleed live map hero with floating HUD overlays, then how it works. */
 export default function HomePage() {
@@ -32,11 +33,10 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-        <div className="p-3 lg:pointer-events-none lg:absolute lg:right-5 lg:top-5 lg:w-80 lg:p-0">
-          <div className="lg:pointer-events-auto">
-            <LeadersCard />
-          </div>
-        </div>
+        <aside className="map-passenger-panel" aria-label="Leaderboard and scan to play">
+          <LeadersCard />
+          <PlayQrCard />
+        </aside>
       </div>
       <HowItWorks />
       <footer className="pb-6 text-center font-mono text-xs text-hud-dim">

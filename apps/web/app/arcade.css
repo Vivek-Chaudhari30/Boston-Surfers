@@ -758,3 +758,62 @@
     transition: none !important;
   }
 }
+
+/* Passenger map: standings at top right, a real phone-sized QR immediately below. */
+.map-passenger-panel {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+.map-play-card {
+  position: relative;
+  overflow: hidden;
+  border: 2px solid #fff4a8;
+  border-radius: 18px;
+  background: radial-gradient(#173862 1px, transparent 1px) 0 0 / 9px 9px, #102544;
+  padding: 16px;
+  text-align: center;
+  box-shadow: 5px 5px 0 #ff6a94;
+}
+.map-play-kicker {
+  color: #8decd9;
+  font: 700 10px/1.4 ui-monospace, monospace;
+  letter-spacing: .09em;
+}
+.map-play-card h2 {
+  margin: 5px 0 3px;
+  color: #ffe36a;
+  font-size: 34px;
+  line-height: 1;
+  text-shadow: 2px 3px 0 #111b35;
+}
+.map-play-card > p { margin: 6px auto; max-width: 260px; font-size: 12px; line-height: 1.4; color: #e5eefb; }
+.map-play-qr {
+  display: inline-grid;
+  margin: 10px auto 3px;
+  padding: 7px;
+  border: 3px solid #132443;
+  border-radius: 13px;
+  background: white;
+  box-shadow: 0 0 0 3px #75ead4, 5px 5px 0 #070d26;
+}
+.map-play-qr-link { display: block; border-radius: 4px; }
+.map-play-qr svg { display: block; max-width: 100%; height: auto; }
+.map-play-qr-link:focus-visible { outline: 4px solid #b73d73; outline-offset: 2px; }
+.map-play-placeholder { display: grid; place-content: center; gap: 12px; width: 176px; height: 176px; font-size: 13px; color: #112244; }
+.map-play-placeholder button { border: 2px solid #112244; border-radius: 8px; padding: 6px; font-weight: 800; cursor: pointer; }
+.map-play-card > .map-play-instruction { margin-top: 10px; font-weight: 700; }
+.map-play-card > .map-play-network { color: #8decd9; font-size: 11px; }
+.map-play-button { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 11px; border: 2px solid #12213c; border-radius: 9px; padding: 9px; background: #ffe36a; color: #11213c; font-size: 20px; line-height: 1.1; box-shadow: 0 3px 0 #070d26; transition: transform .15s, background .15s; }
+.map-play-button:hover { background: #a4f1dc; transform: translateY(-2px); }
+.map-play-button:focus-visible { outline: 3px solid white; outline-offset: 3px; }
+.map-play-card > .map-play-note { margin: 10px 0 0; color: #b8c9e2; font-size: 10px; }
+@media (min-width: 1024px) {
+  .map-passenger-panel { position: absolute; top: 20px; right: 20px; width: 320px; padding: 0 7px 9px 0; max-height: calc(100dvh - 104px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: #8decd9 #102544; }
+}
+@media (min-width: 640px) and (max-width: 1023px) {
+  .map-passenger-panel { grid-template-columns: 1fr 1fr; align-items: start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .map-play-button { transition: none; }
+}

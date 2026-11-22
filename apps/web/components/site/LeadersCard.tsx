@@ -5,7 +5,7 @@ export function LeadersCard() {
   return (
     <details open className="comic-site-card group">
       <summary className="comic-type flex cursor-pointer list-none items-center justify-between px-4 py-3 text-xl uppercase text-yellow-100 [&::-webkit-details-marker]:hidden">
-        Today&apos;s leaders
+        Today&apos;s leaderboard
         <span
           aria-hidden
           className="transition-transform group-open:rotate-180"
