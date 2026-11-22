@@ -1,5 +1,6 @@
 import type QrScannerType from "qr-scanner";
 import { codeFromQr } from "./claim-code";
+import { DEMO_REWARD_PREFIX } from "@/lib/demo-reward";
 import type { RiderInput } from "./types";
 
 /**
@@ -21,6 +22,7 @@ export class WebcamQrRiderInput implements RiderInput {
       onReady?: () => void;
       onError?: (message: string) => void;
       onCameraCheck?: () => void;
+      onDemoReward?: (payload: string) => void;
     } = {},
   ) {}
 
@@ -43,6 +45,13 @@ export class WebcamQrRiderInput implements RiderInput {
           if (gen !== this.generation) return;
           if (result.data.trim() === "CB-CAMERA-CHECK") {
             this.hooks.onCameraCheck?.();
+            return;
+          }
+          if (
+            result.data.startsWith(DEMO_REWARD_PREFIX) &&
+            result.data.length <= 128
+          ) {
+            this.hooks.onDemoReward?.(result.data);
             return;
           }
           const code = codeFromQr(result.data);

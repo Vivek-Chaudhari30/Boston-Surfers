@@ -38,6 +38,21 @@ describe("Mac camera scanner lifecycle", () => {
     expect(codeFromQr("CB-CAMERA-CHECK")).toBeNull();
     input.stop();
   });
+  it("routes a demo coupon only to the demo display callback", async () => {
+    const claim = vi.fn(),
+      demo = vi.fn(),
+      check = vi.fn();
+    const input = new WebcamQrRiderInput({} as HTMLVideoElement, {
+      onDemoReward: demo,
+      onCameraCheck: check,
+    });
+    await input.start(claim);
+    scannerMock.callback?.({ data: "CBD1:P1:1234ABCD" });
+    expect(demo).toHaveBeenCalledWith("CBD1:P1:1234ABCD");
+    expect(claim).not.toHaveBeenCalled();
+    expect(check).not.toHaveBeenCalled();
+    input.stop();
+  });
   it("reads a proper claim once, ignores unrelated QR codes and blocks stale callbacks after close", async () => {
     const claim = vi.fn();
     const input = new WebcamQrRiderInput({} as HTMLVideoElement);

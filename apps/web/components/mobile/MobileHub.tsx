@@ -6,6 +6,8 @@ import { rewardCatalog } from "@/lib/reward-catalog";
 import type { Award } from "@/lib/awards-logic";
 import { ArcadeBrand } from "@/components/play/ArcadeBrand";
 import { RewardClaim } from "./RewardClaim";
+import { DemoRewardPass } from "./DemoRewardPass";
+import { createDemoReward, type DemoReward } from "@/lib/demo-reward";
 import { LeaveTrain } from "./LeaveTrain";
 import { MobileNav, type MobileSection } from "./MobileNav";
 import { readPersonalPractice, type PersonalPractice } from "./practice-history";
@@ -73,6 +75,8 @@ export function MobileHub({ section }: { section: MobileSection }) {
   const [practice, setPractice] = useState<PersonalPractice[]>([]);
   const [now, setNow] = useState(0);
   const [claim, setClaim] = useState<{ code: string; expiresAt: string } | null>(null);
+
+  const [demoReward, setDemoReward] = useState<DemoReward | null>(null);
 
   const selectedClaim = claim?.code ?? params.get("claim");
 
@@ -173,6 +177,7 @@ export function MobileHub({ section }: { section: MobileSection }) {
               >
                 {me?.activeRide ? "SOLO RUN ↗" : "LET’S ROLL! ↗"}
               </Link>
+              <button className="personal-button comic-type demo-getting-off" onClick={() => setDemoReward(createDemoReward())}>I am Getting off</button>
             </section>
             <div className="personal-stats">
               <div>
@@ -193,7 +198,7 @@ export function MobileHub({ section }: { section: MobileSection }) {
               </p>
             </section>
             {me?.activeRide && (
-              <LeaveTrain rideId={me.activeRide.id} onClose={() => void pass.refresh()} />
+              <details className="demo-ranked-actions"><summary>Ranked ride options</summary><LeaveTrain rideId={me.activeRide.id} onClose={() => void pass.refresh()} /></details>
             )}
             <p className="personal-footnote">
               Practice stays on this phone. Ranked runs and winnings sync to your account.
@@ -391,6 +396,7 @@ export function MobileHub({ section }: { section: MobileSection }) {
         )}
       </div>
       <MobileNav current={section} />
+      {demoReward && <DemoRewardPass reward={demoReward} onClose={() => setDemoReward(null)} />}
     </main>
   );
 }

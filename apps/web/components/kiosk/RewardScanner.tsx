@@ -3,6 +3,11 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, errorText } from "@/lib/api-client";
+import {
+  decodeDemoReward,
+  DEMO_REWARD_PREFIX,
+  type DemoReward,
+} from "@/lib/demo-reward";
 import { RewardRedemption } from "@/lib/reward-claim";
 import {
   WebcamQrRiderInput,
@@ -28,11 +33,13 @@ export function RewardScanner() {
   const [cameraCheck, setCameraCheck] = useState(false);
   const [epoch, setEpoch] = useState(0);
   const [manual, setManual] = useState("");
+  const [demo, setDemo] = useState<DemoReward | null>(null);
   const [draftKey, setDraftKey] = useState("");
   const submit = useCallback(
     async (code: string) => {
       if (busy.current) return;
       busy.current = true;
+      setDemo(null);
       scanner.current?.stop();
       setCameraReady(false);
       setCaptured(code);
@@ -59,11 +66,31 @@ export function RewardScanner() {
     },
     [kioskKey],
   );
+  const acceptDemo = useCallback((payload: string) => {
+    if (busy.current) return;
+    const decoded = decodeDemoReward(payload);
+    if (!decoded) {
+      setError(
+        "This demo QR is not supported. Generate a new reward on your phone.",
+      );
+      return;
+    }
+    scanner.current?.stop();
+    setDemo(decoded);
+    setCameraReady(false);
+    setCameraError(null);
+    setCaptured(null);
+    setCameraCheck(false);
+    setError(null);
+    setResult(null);
+    setWorking(false);
+  }, []);
   useEffect(() => {
     if (!video.current) return;
     const input = new WebcamQrRiderInput(video.current, {
       onReady: () => setCameraReady(true),
       onError: (message) => setCameraError(message),
+      onDemoReward: acceptDemo,
       onCameraCheck: () => {
         input.stop();
         setCameraReady(false);
@@ -76,8 +103,9 @@ export function RewardScanner() {
       input.stop();
       if (scanner.current === input) scanner.current = null;
     };
-  }, [epoch, submit]);
+  }, [epoch, submit, acceptDemo]);
   function rescan() {
+    setDemo(null);
     setCameraCheck(false);
     setError(null);
     setCaptured(null);
@@ -115,7 +143,7 @@ export function RewardScanner() {
             className="claim-camera-video"
             aria-label="Kiosk reward scanning camera"
           />
-          {!captured && (
+          {!captured && !cameraCheck && !demo && (
             <div className="claim-scan-guide" aria-hidden>
               <i />
               <i />
@@ -124,83 +152,119 @@ export function RewardScanner() {
             </div>
           )}
           <div className="claim-camera-status" role="status">
-            {cameraCheck
-              ? "CAMERA CHECK PASSED · NO REWARD CLAIMED"
-              : working
-                ? "VALIDATING CLAIM → ARDUINO"
-                : captured
-                  ? `CAPTURED · ${captured}`
-                  : cameraReady
-                    ? "CAMERA LIVE · HOLD YOUR QR INSIDE THE FRAME"
-                    : cameraError
-                      ? "CAMERA UNAVAILABLE"
-                      : "OPENING YOUR MAC CAMERA…"}
+            {demo
+              ? "DEMO COUPON UNLOCKED"
+              : cameraCheck
+                ? "CAMERA CHECK PASSED · NO REWARD CLAIMED"
+                : working
+                  ? "VALIDATING CLAIM → ARDUINO"
+                  : captured
+                    ? `CAPTURED · ${captured}`
+                    : cameraReady
+                      ? "CAMERA LIVE · HOLD YOUR QR INSIDE THE FRAME"
+                      : cameraError
+                        ? "CAMERA UNAVAILABLE"
+                        : "OPENING YOUR MAC CAMERA…"}
           </div>
-          {(captured || cameraCheck) && (
+          {(captured || cameraCheck || demo) && (
             <div className="claim-camera-result">
               <span aria-hidden>
-                {cameraCheck || result?.state === "complete"
-                  ? "✓"
-                  : result?.state === "already_complete"
-                    ? "↺"
-                    : "⌁"}
+                {demo
+                  ? "★"
+                  : cameraCheck || result?.state === "complete"
+                    ? "✓"
+                    : result?.state === "already_complete"
+                      ? "↺"
+                      : "⌁"}
               </span>
               <h2 className="comic-type">
-                {cameraCheck
-                  ? "CAMERA CHECK PASSED!"
-                  : working
-                    ? "CHECKING YOUR PASS…"
-                    : result?.state === "complete"
-                      ? "REWARD CONFIRMED!"
-                      : result?.state === "already_complete"
-                        ? "ALREADY CLAIMED."
-                        : result?.state === "hardware_error"
-                          ? "RECONNECT THE ARDUINO."
-                          : "QR CAPTURED."}
+                {demo
+                  ? "HERE’S YOUR PROMO CODE!"
+                  : cameraCheck
+                    ? "CAMERA CHECK PASSED!"
+                    : working
+                      ? "CHECKING YOUR PASS…"
+                      : result?.state === "complete"
+                        ? "REWARD CONFIRMED!"
+                        : result?.state === "already_complete"
+                          ? "ALREADY CLAIMED."
+                          : result?.state === "hardware_error"
+                            ? "RECONNECT THE ARDUINO."
+                            : "QR CAPTURED."}
               </h2>
+              {demo && (
+                <div className="claim-demo-promo">
+                  <span>YOUR DEMO PROMO CODE</span>
+                  <strong>{demo.promoCode}</strong>
+                </div>
+              )}
               <p>
-                {cameraCheck
-                  ? "Your Mac camera read the phone’s test QR. This check creates no reward claim and does not trigger the Arduino."
-                  : working
-                    ? "The reward is confirmed only after the Arduino responds."
-                    : result?.state === "complete"
-                      ? result.mode === "led-only"
-                        ? "The UNO Q’s green LED confirmed your reward. This demonstration does not dispense a physical item."
-                        : "The connected device confirmed the reward."
-                      : result?.state === "already_complete"
-                        ? "This reward was completed earlier. No second reward was triggered."
-                        : (result?.detail ?? error)}
+                {demo
+                  ? `${demo.offer} at ${demo.merchant}.`
+                  : cameraCheck
+                    ? "Your Mac camera read the phone’s test QR. This check creates no reward claim and does not trigger the Arduino."
+                    : working
+                      ? "The reward is confirmed only after the Arduino responds."
+                      : result?.state === "complete"
+                        ? result.mode === "led-only"
+                          ? "The UNO Q’s green LED confirmed your reward. This demonstration does not dispense a physical item."
+                          : "The connected device confirmed the reward."
+                        : result?.state === "already_complete"
+                          ? "This reward was completed earlier. No second reward was triggered."
+                          : (result?.detail ?? error)}
               </p>
+              {demo && (
+                <small className="claim-demo-disclaimer">
+                  Example coupon · not redeemable at the business.
+                </small>
+              )}
             </div>
           )}
         </div>
         <aside className="claim-instructions">
-          <div className="comic-site-card claim-steps">
-            <p className="display-eyebrow">PHONE → CAMERA → UNO Q</p>
-            <h2 className="comic-type">ONE LAST THING.</h2>
-            <ol>
-              <li>
-                <b>01</b>
-                <span>
-                  On your phone, tap <strong>I am getting off</strong> after a
-                  ranked ride.
-                </span>
-              </li>
-              <li>
-                <b>02</b>
-                <span>
-                  Keep the reward QR bright, flat, and facing the laptop camera.
-                </span>
-              </li>
-              <li>
-                <b>03</b>
-                <span>
-                  Wait for <strong>Reward confirmed</strong> and the Arduino’s
-                  green LED.
-                </span>
-              </li>
-            </ol>
-          </div>
+          {!demo && (
+            <div className="comic-site-card claim-steps">
+              <p className="display-eyebrow">PHONE → CAMERA → REWARD</p>
+              <h2 className="comic-type">ONE LAST THING.</h2>
+              <ol>
+                <li>
+                  <b>01</b>
+                  <span>
+                    On your phone, tap <strong>I am Getting off</strong> under
+                    Let’s roll.
+                  </span>
+                </li>
+                <li>
+                  <b>02</b>
+                  <span>
+                    Keep the reward QR bright, flat, and facing the laptop
+                    camera.
+                  </span>
+                </li>
+                <li>
+                  <b>03</b>
+                  <span>
+                    Scan your demo reward QR to reveal your{" "}
+                    <strong>promo code</strong>.
+                  </span>
+                </li>
+              </ol>
+            </div>
+          )}
+          {demo && (
+            <div className="claim-demo-details comic-site-card">
+              <p className="display-eyebrow">BOSTON EXPLORER · DEMO COUPON</p>
+              <h2 className="comic-type">{demo.offer}</h2>
+              <h3>{demo.merchant}</h3>
+              <p>{demo.address}</p>
+              <p>{demo.description}</p>
+              <div className="claim-demo-ready">QR ACCEPTED · PROMO READY</div>
+              <p className="demo-coupon-disclaimer">
+                Example offer for the hackathon presentation. No purchase or
+                actual merchant redemption is available.
+              </p>
+            </div>
+          )}
           {result?.reward && (
             <div className="claim-reward-summary">
               <span>VERIFIED REWARD</span>
@@ -225,7 +289,7 @@ export function RewardScanner() {
               {error}
             </p>
           )}
-          {captured || cameraCheck ? (
+          {captured || cameraCheck || demo ? (
             <div className="claim-actions">
               {captured && (!result || result.state === "hardware_error") && (
                 <button
@@ -249,6 +313,10 @@ export function RewardScanner() {
               className="claim-manual"
               onSubmit={(event) => {
                 event.preventDefault();
+                if (manual.trim().startsWith(DEMO_REWARD_PREFIX)) {
+                  acceptDemo(manual.trim());
+                  return;
+                }
                 const code = normalizeTypedCode(manual);
                 if (code) void submit(code);
                 else
@@ -258,7 +326,7 @@ export function RewardScanner() {
               }}
             >
               <label htmlFor="claim-code">
-                Camera having trouble? Enter the code.
+                Camera backup · paste QR data or enter a claim code.
               </label>
               <div>
                 <input
@@ -267,17 +335,17 @@ export function RewardScanner() {
                   onChange={(event) =>
                     setManual(event.target.value.toUpperCase())
                   }
-                  maxLength={6}
-                  placeholder="ABC234"
+                  maxLength={128}
+                  placeholder="ABC234 or CBD1:…"
                   autoComplete="off"
                 />
                 <button disabled={working}>CHECK CODE</button>
               </div>
             </form>
           )}
-          {!kioskKey && (
+          {!kioskKey && !demo && (
             <details className="claim-setup">
-              <summary>Kiosk setup needed · camera can still scan</summary>
+              <summary>Setup for ranked claims · demo coupons work now</summary>
               <p>
                 Vivek’s backend must be configured. Use the existing kiosk key
                 here; passenger sign-in stays on the phone.

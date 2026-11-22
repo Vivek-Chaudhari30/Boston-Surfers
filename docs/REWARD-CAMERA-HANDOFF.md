@@ -33,3 +33,7 @@ Vivek’s new signup, awards, race and history flow is preserved. `LeaveTrain` n
 The UNO Q native server was reachable on Mac loopback port 8765, in `led-only` mode. Next must run on the Mac with USB/ADB forwarding active; Vercel cannot reach that loopback server. `UNOQ_URL` overrides the board origin. Existing firmware remembers only the most recent id; retries of old unconfirmed claims after other rewards or a board restart need crew reconciliation. No physical dispensing is claimed.
 
 Tests cover camera cancellation/cleanup, diagnostic isolation, unsupported previews, duplicate QR callbacks, reward states, kiosk authorization, missing/expired/used claims, simultaneous scan coalescing, stable retry ids and matching device acknowledgements. Real ranked phone → camera → LED → phone completion verification still depends on backend configuration.
+
+## Presentation coupon override
+
+The user subsequently requested a random-award demo that reveals an example promo immediately, without waiting for ranked eligibility. `CBD1:` demo coupons now use their own local display callback and never enter the ranked claim or Arduino endpoints. See [DEMO-COUPON-RUNBOOK.md](DEMO-COUPON-RUNBOOK.md). The signed-in ranked `CB1:` flow above is retained.
