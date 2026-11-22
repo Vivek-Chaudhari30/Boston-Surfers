@@ -1002,3 +1002,6 @@
   .claim-steps li { font-size: 12px; }
   .claim-instructions { gap: 12px; }
 }
+.mobile-leave-overlay:has(.phone-claim) { justify-content: flex-start; }
+.mobile-leave-overlay .phone-claim { width: min(100%, 400px); margin: 0; flex-shrink: 0; }
+.mobile-chip.processing { background: #53452a; color: #ffe175; }

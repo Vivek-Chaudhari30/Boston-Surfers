@@ -26,7 +26,9 @@ A short ranked winner run gets a Boston keepsake; higher scores select the match
 
 The running Mac preview reports missing Supabase, SESSION_SECRET and KIOSK_SECRET. Vivek owns backend and sign-in setup. Never put secrets in code or chat. Camera-only testing works now.
 
-The scanner uses the existing `cb:kiosk-key` (from `?key=` or its setup form). Endpoints still require `requireKiosk`; there is no local reward/auth bypass. The public map QR is still a generic passenger link; a valid configured car join QR is required for ranked play.
+The scanner uses the existing `cb:kiosk-key` (from `?key=` or its setup form). Endpoints still require `requireKiosk`; there is no local reward/auth bypass. Vivek’s configured map now shows a rotating car join QR; without a kiosk key it still shows the generic passenger link. A configured car join QR is required for ranked play.
+
+Vivek’s new signup, awards, race and history flow is preserved. `LeaveTrain` now renders the new reward QR component. The native `/kiosk` defaults to HTTP transport, and automatic pending-claim redemption is disabled by default so it cannot consume a claim before the camera scan; the legacy auto-voucher path is explicitly opt-in with `?claimMode=auto`.
 
 The UNO Q native server was reachable on Mac loopback port 8765, in `led-only` mode. Next must run on the Mac with USB/ADB forwarding active; Vercel cannot reach that loopback server. `UNOQ_URL` overrides the board origin. Existing firmware remembers only the most recent id; retries of old unconfirmed claims after other rewards or a board restart need crew reconciliation. No physical dispensing is claimed.
 
