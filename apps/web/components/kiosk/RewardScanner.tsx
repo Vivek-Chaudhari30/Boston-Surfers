@@ -14,6 +14,7 @@ import {
   WebcamQrRiderInput,
   normalizeTypedCode,
 } from "@/lib/adapters/rider-input";
+import { browserMatrixStatus, playBrowserMatrix } from "@/lib/adapters/dispenser/browser-matrix";
 import { useKioskKey } from "./hooks";
 
 type Result = import("zod").infer<typeof RewardRedemption>;
@@ -53,6 +54,7 @@ export function RewardScanner() {
     "idle" | "playing" | "done" | "error"
   >("idle");
   const [matrixError, setMatrixError] = useState<string | null>(null);
+  const browserBridge = useRef(false);
   const matrixEnabled = useRef<boolean | null>(null);
   const matrixOperation = useRef<{ payload: string; requestId: string } | null>(
     null,
@@ -61,6 +63,11 @@ export function RewardScanner() {
     let disposed = false;
     async function check() {
       try {
+        if (browserBridge.current) {
+          await browserMatrixStatus();
+          if (!disposed) setMatrixConnection("ready");
+          return;
+        }
         const status = await api("/api/demo/matrix", MatrixStatus, {
           signal: AbortSignal.timeout(3500),
         });
@@ -86,7 +93,8 @@ export function RewardScanner() {
       setMatrixAnimation("playing");
       setMatrixError(null);
       try {
-        await api("/api/demo/matrix", MatrixReply, { body: operation });
+        if (browserBridge.current) await playBrowserMatrix(operation.requestId);
+        else await api("/api/demo/matrix", MatrixReply, { body: operation });
         setMatrixAnimation("done");
       } catch (err) {
         setMatrixAnimation("error");
@@ -95,6 +103,20 @@ export function RewardScanner() {
     },
     [],
   );
+  async function connectMatrix() {
+    setMatrixConnection("checking");
+    setMatrixError(null);
+    try {
+      await browserMatrixStatus();
+      browserBridge.current = true;
+      matrixEnabled.current = true;
+      setMatrixConnection("ready");
+      if (matrixOperation.current) void playMatrix(matrixOperation.current);
+    } catch {
+      setMatrixConnection("disabled");
+      setMatrixError("Keep the UNO Q connected by USB and allow this site’s local network access in Chrome, then retry.");
+    }
+  }
   const submit = useCallback(
     async (code: string) => {
       if (busy.current) return;
@@ -206,9 +228,13 @@ export function RewardScanner() {
               : matrixConnection === "checking"
                 ? "CHECKING USB MATRIX…"
                 : matrixConnection === "disabled"
-                  ? "USB ANIMATION: OPEN THE MAC KIOSK AT LOCALHOST:3001"
+                  ? "CONNECT YOUR USB ARDUINO TO ENABLE WIN ANIMATIONS"
                   : "USB MATRIX OFFLINE · CHECK THE ARDUINO CONNECTION"}
           </p>
+          {(matrixConnection === "disabled" || matrixConnection === "offline") && (
+            <button className="claim-secondary" onClick={() => void connectMatrix()}>CONNECT USB ARDUINO</button>
+          )}
+          {matrixError && matrixAnimation !== "error" && <p role="alert">{matrixError}</p>}
         </div>
         <Link href="/kiosk" className="claim-close">
           CLOSE CAMERA ×
@@ -304,7 +330,7 @@ export function RewardScanner() {
                       : matrixAnimation === "error"
                         ? matrixError
                         : matrixConnection === "disabled"
-                          ? "Open the local Mac kiosk to animate the USB-connected UNO Q."
+                          ? "Tap Connect USB Arduino to play this win on the LED matrix."
                           : ""}
                 </p>
               )}
@@ -407,12 +433,9 @@ export function RewardScanner() {
                 </button>
               )}
               {demo && matrixConnection === "disabled" && (
-                <a
-                  className="claim-secondary"
-                  href="http://localhost:3001/kiosk/claim"
-                >
-                  OPEN MAC USB KIOSK
-                </a>
+                <button className="claim-secondary" onClick={() => void connectMatrix()}>
+                  CONNECT USB ARDUINO
+                </button>
               )}
               {captured && (!result || result.state === "hardware_error") && (
                 <button

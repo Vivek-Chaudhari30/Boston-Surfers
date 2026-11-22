@@ -8,6 +8,7 @@ import time
 import zlib
 from rpc import call
 
+PUBLIC_ORIGIN = 'https://constant-buffers.vercel.app'
 ID = re.compile(r'[A-Za-z0-9]{1,12}\Z')
 
 
@@ -53,9 +54,27 @@ class MatrixDevice:
 
 def handler(device):
     class Handler(BaseHTTPRequestHandler):
+        def allowed_origin(self):
+            origin = self.headers.get('Origin')
+            return not origin or origin in (PUBLIC_ORIGIN, 'http://' + self.headers.get('Host', ''))
+
+        def do_OPTIONS(self):
+            if not self.allowed_origin():
+                return self.respond(403, {'error': 'Origin not allowed'})
+            if self.path not in ('/api/status', '/api/reward'):
+                return self.respond(404, {'error': 'Not found'})
+            self.respond(200, {'ok': True})
+
         def respond(self, status, data):
             body = json.dumps(data).encode()
             self.send_response(status)
+            origin = self.headers.get('Origin')
+            if origin and self.allowed_origin():
+                self.send_header('Access-Control-Allow-Origin', origin)
+                self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+                self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+                self.send_header('Access-Control-Allow-Private-Network', 'true')
+            self.send_header('Vary', 'Origin')
             self.send_header('Content-Type', 'application/json')
             self.send_header('Cache-Control', 'no-store')
             self.send_header('Content-Length', str(len(body)))
@@ -63,6 +82,8 @@ def handler(device):
             self.wfile.write(body)
 
         def do_GET(self):
+            if not self.allowed_origin():
+                return self.respond(403, {'error': 'Origin not allowed'})
             if self.path != '/api/status':
                 return self.respond(404, {'error': 'Not found'})
             try:
@@ -73,8 +94,7 @@ def handler(device):
         def do_POST(self):
             if self.path != '/api/reward':
                 return self.respond(404, {'error': 'Not found'})
-            origin = self.headers.get('Origin')
-            if origin and origin != 'http://' + self.headers.get('Host', ''):
+            if not self.allowed_origin():
                 return self.respond(403, {'error': 'Origin not allowed'})
             if self.headers.get('Content-Type', '').split(';')[0] != 'application/json':
                 return self.respond(415, {'error': 'Expected JSON'})

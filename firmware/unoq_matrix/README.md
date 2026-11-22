@@ -49,7 +49,7 @@ Each deliberate scan/replay gets a new 12-hex request id. Retries of that reques
 - `POST /api/reward { id }`: resolves after the MCU acknowledges that animation's completion.
 - Duplicate ids return success without replay; concurrent distinct requests return BUSY.
 
-The local web endpoint `/api/demo/matrix` is opt-in with `UNOQ_MATRIX_DEMO=1`, permits loopback hosts and matching browser origins only, validates winning demo QR data, and rejects real ranked claims/diagnostic QR data on this anonymous demo path. The local Next server binds loopback. No public deployment can reach the Mac's USB port.
+The local web endpoint `/api/demo/matrix` is opt-in with `UNOQ_MATRIX_DEMO=1`, permits loopback hosts and matching browser origins only, validates winning demo QR data, and rejects real ranked claims/diagnostic QR data on this anonymous demo path. The local Next server binds loopback. A cloud server cannot reach the Mac's USB port; the public kiosk instead uses the browser connection below.
 
 ## Verification performed
 
@@ -57,3 +57,15 @@ The local web endpoint `/api/demo/matrix` is opt-in with `UNOQ_MATRIX_DEMO=1`, p
 - Initial test and three announced replays completed; user confirmed the animation was visible.
 - Real Chrome kiosk's winning-code backup triggered the same handler as its QR camera callback. MCU count advanced from 4 to 5 and the kiosk showed **UNO Q LED matrix animation completed**.
 - Web tests cover local opt-in, origin/host checks, QR validation, stable retry ids, matrix-only acknowledgements and disconnected USB handling.
+
+## Public Vercel kiosk with USB matrix
+
+Open https://constant-buffers.vercel.app/kiosk/claim in Chrome on the USB-connected Mac.
+Click **Connect USB Arduino** and allow Chrome’s local/loopback network permission.
+The website stays on Vercel; browser requests go directly to the loopback USB bridge
+at `127.0.0.1:8765`. Keep the native server and ADB forward running as described above.
+Only the exact `https://constant-buffers.vercel.app` origin and same-origin requests
+are allowed by the bridge. It is never exposed on the internet.
+After a demo winning QR, the promo code appears and the matrix plays; completion
+is displayed only after the MCU acknowledges it. This path is for demo animations;
+it does not authorize ranked reward redemption.
