@@ -34,6 +34,7 @@ export default function GameHarness() {
     try {
       const stored = readPractice(localStorage.getItem(PRACTICE_KEY));
       historyRef.current = stored;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage is only readable after mount
       setHistory(stored);
     } catch {
       /* Storage may be disabled; session play still works. */
