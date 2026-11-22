@@ -1,3 +1,7 @@
+# Active LED-matrix demo
+
+Use [unoq_matrix](unoq_matrix/README.md) for the blue winning animation triggered from a kiosk winning QR. It is verified over USB using the native Arduino Router, and the user confirmed the physical animation. The HTTP green-light demo below remains a legacy fallback.
+
 # Firmware: sticker dispenser
 
 ## Jeet's actual hardware: UNO Q only

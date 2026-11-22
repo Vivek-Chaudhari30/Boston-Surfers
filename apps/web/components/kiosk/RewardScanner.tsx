@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { z } from "zod";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, errorText } from "@/lib/api-client";
@@ -16,6 +17,16 @@ import {
 import { useKioskKey } from "./hooks";
 
 type Result = import("zod").infer<typeof RewardRedemption>;
+const MatrixStatus = z.object({ enabled: z.boolean(), connected: z.boolean() });
+const MatrixReply = z.object({
+  ok: z.literal(true),
+  mode: z.literal("matrix-only"),
+});
+function animationId() {
+  return Array.from(crypto.getRandomValues(new Uint8Array(6)), (value) =>
+    value.toString(16).padStart(2, "0"),
+  ).join("");
+}
 export function RewardScanner() {
   const params = useSearchParams();
   const storedKey = useKioskKey(params.get("key"));
@@ -35,6 +46,55 @@ export function RewardScanner() {
   const [manual, setManual] = useState("");
   const [demo, setDemo] = useState<DemoReward | null>(null);
   const [draftKey, setDraftKey] = useState("");
+  const [matrixConnection, setMatrixConnection] = useState<
+    "checking" | "ready" | "offline" | "disabled"
+  >("checking");
+  const [matrixAnimation, setMatrixAnimation] = useState<
+    "idle" | "playing" | "done" | "error"
+  >("idle");
+  const [matrixError, setMatrixError] = useState<string | null>(null);
+  const matrixEnabled = useRef<boolean | null>(null);
+  const matrixOperation = useRef<{ payload: string; requestId: string } | null>(
+    null,
+  );
+  useEffect(() => {
+    let disposed = false;
+    async function check() {
+      try {
+        const status = await api("/api/demo/matrix", MatrixStatus, {
+          signal: AbortSignal.timeout(3500),
+        });
+        if (disposed) return;
+        matrixEnabled.current = status.enabled;
+        setMatrixConnection(
+          !status.enabled ? "disabled" : status.connected ? "ready" : "offline",
+        );
+      } catch {
+        if (!disposed) setMatrixConnection("offline");
+      }
+    }
+    const first = setTimeout(() => void check(), 0);
+    const poll = setInterval(() => void check(), 5000);
+    return () => {
+      disposed = true;
+      clearTimeout(first);
+      clearInterval(poll);
+    };
+  }, []);
+  const playMatrix = useCallback(
+    async (operation: { payload: string; requestId: string }) => {
+      setMatrixAnimation("playing");
+      setMatrixError(null);
+      try {
+        await api("/api/demo/matrix", MatrixReply, { body: operation });
+        setMatrixAnimation("done");
+      } catch (err) {
+        setMatrixAnimation("error");
+        setMatrixError(errorText(err));
+      }
+    },
+    [],
+  );
   const submit = useCallback(
     async (code: string) => {
       if (busy.current) return;
@@ -66,25 +126,33 @@ export function RewardScanner() {
     },
     [kioskKey],
   );
-  const acceptDemo = useCallback((payload: string) => {
-    if (busy.current) return;
-    const decoded = decodeDemoReward(payload);
-    if (!decoded) {
-      setError(
-        "This demo QR is not supported. Generate a new reward on your phone.",
-      );
-      return;
-    }
-    scanner.current?.stop();
-    setDemo(decoded);
-    setCameraReady(false);
-    setCameraError(null);
-    setCaptured(null);
-    setCameraCheck(false);
-    setError(null);
-    setResult(null);
-    setWorking(false);
-  }, []);
+  const acceptDemo = useCallback(
+    (payload: string) => {
+      if (busy.current) return;
+      const decoded = decodeDemoReward(payload);
+      if (!decoded) {
+        setError(
+          "This demo QR is not supported. Generate a new reward on your phone.",
+        );
+        return;
+      }
+      scanner.current?.stop();
+      setDemo(decoded);
+      setCameraReady(false);
+      setCameraError(null);
+      setCaptured(null);
+      setCameraCheck(false);
+      setError(null);
+      setResult(null);
+      setWorking(false);
+      const operation = { payload: decoded.payload, requestId: animationId() };
+      matrixOperation.current = operation;
+      setMatrixAnimation("idle");
+      setMatrixError(null);
+      if (matrixEnabled.current !== false) void playMatrix(operation);
+    },
+    [playMatrix],
+  );
   useEffect(() => {
     if (!video.current) return;
     const input = new WebcamQrRiderInput(video.current, {
@@ -105,6 +173,9 @@ export function RewardScanner() {
     };
   }, [epoch, submit, acceptDemo]);
   function rescan() {
+    matrixOperation.current = null;
+    setMatrixAnimation("idle");
+    setMatrixError(null);
     setDemo(null);
     setCameraCheck(false);
     setError(null);
@@ -128,6 +199,15 @@ export function RewardScanner() {
           <p>
             Show the one-time QR from your phone. This laptop’s camera does the
             rest.
+          </p>
+          <p className={`matrix-connection ${matrixConnection}`} role="status">
+            {matrixConnection === "ready"
+              ? "UNO Q LED MATRIX CONNECTED"
+              : matrixConnection === "checking"
+                ? "CHECKING USB MATRIX…"
+                : matrixConnection === "disabled"
+                  ? "USB ANIMATION: OPEN THE MAC KIOSK AT LOCALHOST:3001"
+                  : "USB MATRIX OFFLINE · CHECK THE ARDUINO CONNECTION"}
           </p>
         </div>
         <Link href="/kiosk" className="claim-close">
@@ -206,13 +286,28 @@ export function RewardScanner() {
                     : working
                       ? "The reward is confirmed only after the Arduino responds."
                       : result?.state === "complete"
-                        ? result.mode === "led-only"
-                          ? "The UNO Q’s green LED confirmed your reward. This demonstration does not dispense a physical item."
-                          : "The connected device confirmed the reward."
+                        ? result.mode === "matrix-only"
+                          ? "The UNO Q’s blue LED matrix completed the winning animation."
+                          : result.mode === "led-only"
+                            ? "The UNO Q’s green LED confirmed your reward. This demonstration does not dispense a physical item."
+                            : "The connected device confirmed the reward."
                         : result?.state === "already_complete"
                           ? "This reward was completed earlier. No second reward was triggered."
                           : (result?.detail ?? error)}
               </p>
+              {demo && (
+                <p className="matrix-animation-status" role="status">
+                  {matrixAnimation === "playing"
+                    ? "Playing your winning animation on the UNO Q…"
+                    : matrixAnimation === "done"
+                      ? "✓ UNO Q LED matrix animation completed"
+                      : matrixAnimation === "error"
+                        ? matrixError
+                        : matrixConnection === "disabled"
+                          ? "Open the local Mac kiosk to animate the USB-connected UNO Q."
+                          : ""}
+                </p>
+              )}
               {demo && (
                 <small className="claim-demo-disclaimer">
                   Example coupon · not redeemable at the business.
@@ -291,6 +386,34 @@ export function RewardScanner() {
           )}
           {captured || cameraCheck || demo ? (
             <div className="claim-actions">
+              {demo && matrixConnection !== "disabled" && (
+                <button
+                  className="personal-button comic-type"
+                  disabled={matrixAnimation === "playing"}
+                  onClick={() => {
+                    const operation =
+                      matrixAnimation === "error" && matrixOperation.current
+                        ? matrixOperation.current
+                        : { payload: demo.payload, requestId: animationId() };
+                    matrixOperation.current = operation;
+                    void playMatrix(operation);
+                  }}
+                >
+                  {matrixAnimation === "playing"
+                    ? "WIN ANIMATION PLAYING…"
+                    : matrixAnimation === "error"
+                      ? "RETRY USB ANIMATION"
+                      : "REPLAY WIN ANIMATION"}
+                </button>
+              )}
+              {demo && matrixConnection === "disabled" && (
+                <a
+                  className="claim-secondary"
+                  href="http://localhost:3001/kiosk/claim"
+                >
+                  OPEN MAC USB KIOSK
+                </a>
+              )}
               {captured && (!result || result.state === "hardware_error") && (
                 <button
                   disabled={working || !kioskKey}

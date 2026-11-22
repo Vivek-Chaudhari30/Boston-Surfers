@@ -15,7 +15,7 @@ export async function confirmNativeReward(
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ id }),
           cache: "no-store",
-          signal: AbortSignal.timeout(4000),
+          signal: AbortSignal.timeout(7000),
         },
       );
       const value: unknown = await response.json();

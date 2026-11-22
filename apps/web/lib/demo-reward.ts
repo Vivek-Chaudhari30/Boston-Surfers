@@ -1,6 +1,6 @@
 import { rewardCatalog } from "./reward-catalog";
 
-/** Public, illustrative coupons. CBD1 can never authorize a real CB1 reward or a hardware action. */
+/** Public, illustrative coupons. CBD1 cannot authorize a real CB1 reward. An explicitly enabled local Mac kiosk may play an LED-matrix celebration. */
 export const DEMO_REWARD_PREFIX = "CBD1:";
 export const DEMO_OFFERS = [
   { key: "P1", prefix: "COFFEE", reward: rewardCatalog[0] },

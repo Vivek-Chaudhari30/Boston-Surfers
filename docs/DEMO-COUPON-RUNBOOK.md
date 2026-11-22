@@ -24,3 +24,7 @@ On the phone's QR card, expand **Camera backup · copy QR data**. Copy the `CBD1
 - The old ranked ride-ending control is retained under **Ranked ride options**, so the presentation's primary button is unambiguous.
 
 No new dependencies, environment variables, database migrations or shared contract changes.
+
+## USB LED matrix celebration
+
+The Mac kiosk can now play the UNO Q blue matrix animation for each winning demo QR. Start it with `UNOQ_MATRIX_DEMO=1`, keep the board’s native matrix server and USB forward running, and use `http://localhost:3001/kiosk/claim` in Chrome. The phone can stay on the live website. The promo appears immediately; the kiosk separately shows matrix playback/completion and provides Replay/Retry controls. Camera diagnostics still do not animate. See [../firmware/unoq_matrix/README.md](../firmware/unoq_matrix/README.md).
