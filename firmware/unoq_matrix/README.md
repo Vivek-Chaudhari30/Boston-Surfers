@@ -14,6 +14,25 @@ python3 firmware/unoq_matrix/deploy.py --serial 3454450778
 
 ## Start after reconnect/reboot
 
+Recommended recovery (no firmware flash):
+
+```sh
+python3 firmware/unoq_matrix/start_bridge.py
+```
+
+This restores ADB forwarding, copies the bridge into `/home/arduino/cb-unoq-matrix`,
+and starts it detached from the terminal. Closing the terminal does not stop it.
+The bridge log is `/home/arduino/cb-unoq-matrix/bridge.log` on the board.
+After a board reboot, run the command again. After USB reconnect, it also repairs
+forwarding. This is not an automatically enabled boot service.
+
+Troubleshooting: an ADB device plus a Mac port listener does not prove that the
+board HTTP server is running. A stopped board server produces `Connection refused`
+on the board and `Empty reply from server` through ADB on the Mac. Check
+`http://127.0.0.1:8765/api/status` for a connected matrix-only response.
+
+### Manual foreground alternative
+
 From the repo root:
 
 ```sh
