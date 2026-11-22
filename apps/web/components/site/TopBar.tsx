@@ -3,9 +3,9 @@ import { LineBar } from '@/components/ui/Panel';
 import { ArcadeBrand } from '@/components/play/ArcadeBrand';
 
 /** Slim site header: brand left, nav right, MBTA line stripe underneath. */
-export function TopBar({ current }: { current?: 'map' | 'leaderboard' }) {
+export function TopBar({ current }: { current?: 'map' | 'games' | 'leaderboard' }) {
   const link = (active: boolean) =>
-    `rounded-md px-3 py-1.5 font-mono text-xs uppercase tracking-[0.15em] transition-colors hover:text-hud-text ${
+    `rounded-md px-1.5 py-1.5 font-mono text-xs uppercase sm:px-3 sm:tracking-[0.15em] transition-colors hover:text-hud-text ${
       active ? 'bg-white/10 text-hud-text' : 'text-hud-dim'
     }`;
   return (

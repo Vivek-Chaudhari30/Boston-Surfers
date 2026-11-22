@@ -5,12 +5,17 @@ import { useEffect, useState } from "react";
 
 type PlayLink = { url: string; local: boolean };
 
-export function PlayQrCard() {
+/** In-car mode: show the rotating car join QR instead of the public link. */
+export type CarJoin = { url: string | null; secondsLeft: number; error: string | null };
+
+export function PlayQrCard({ car }: { car?: CarJoin }) {
   const [link, setLink] = useState<PlayLink | null>(null);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
 
+  const carMode = !!car;
   useEffect(() => {
+    if (carMode) return;
     const controller = new AbortController();
     async function load() {
       try {
@@ -33,7 +38,7 @@ export function PlayQrCard() {
     }
     void load();
     return () => controller.abort();
-  }, [attempt]);
+  }, [attempt, carMode]);
 
   return (
     <section className="map-play-card" aria-labelledby="scan-play-title">
@@ -45,7 +50,27 @@ export function PlayQrCard() {
       </h2>
       <p>Your phone is the controller. The city is your playground.</p>
       <div className="map-play-qr">
-        {link ? (
+        {car ? (
+          car.url ? (
+            <div
+              className="map-play-qr-link"
+              role="img"
+              aria-label="Scan this QR to join this train car"
+            >
+              <QRCodeSVG
+                value={car.url}
+                size={176}
+                level="M"
+                marginSize={4}
+                title="Scan to join this car"
+              />
+            </div>
+          ) : (
+            <div className="map-play-placeholder" role="status">
+              {car.error ?? "Preparing car code…"}
+            </div>
+          )
+        ) : link ? (
           <div
             className="map-play-qr-link"
             role="img"
@@ -80,15 +105,26 @@ export function PlayQrCard() {
         )}
       </div>
       <p className="map-play-instruction">
-        Open your camera. Scan the code. Chase the gold.
+        {car
+          ? "Scan to join this car. Top the board, win a voucher!"
+          : "Open your camera. Scan the code. Chase the gold."}
       </p>
-      {link?.local && (
+      {car && (
+        <p className="map-play-network" role="status">
+          ↻ code refreshes in {car.secondsLeft}s
+        </p>
+      )}
+      {!car && link?.local && (
         <p className="map-play-network">Join the same Wi-Fi as this screen.</p>
       )}
       <div className="map-play-destination">
         YOUR GAME. YOUR WINS. YOUR PHONE.
       </div>
-      <p className="map-play-note">Scan to open your personal passenger page</p>
+      <p className="map-play-note">
+        {car
+          ? "Rotating code for this car only"
+          : "Scan to open your personal passenger page"}
+      </p>
     </section>
   );
 }

@@ -1,20 +1,14 @@
-import { Suspense } from 'react';
-import { KioskApp } from '@/components/kiosk/KioskApp';
+import { redirect } from 'next/navigation';
 
-/**
- * Kiosk: /kiosk/<carId>?key=<KIOSK_SECRET>
- * Flags: ?feed=live|replay  ?dispenser=serial|mock  ?input=webcam|keyboard  ?vehicle=<id>  ?replay=<file>
- * Shift+D opens the hidden status panel.
- */
-export default function KioskPage({ params }: PageProps<'/kiosk/[carId]'>) {
-  return (
-    <Suspense fallback={<main className="h-dvh bg-hud-bg" />}>
-      <KioskLoader params={params} />
-    </Suspense>
-  );
-}
-
-async function KioskLoader({ params }: { params: PageProps<'/kiosk/[carId]'>['params'] }) {
+/** Alias: /kiosk/<carId>?key=… → /kiosk?car=<carId>&key=… (other query params preserved). */
+export default async function KioskCarAlias({ params, searchParams }: PageProps<'/kiosk/[carId]'>) {
   const { carId } = await params;
-  return <KioskApp carId={carId} />;
+  const sp = await searchParams;
+  const q = new URLSearchParams();
+  q.set('car', carId);
+  for (const [k, v] of Object.entries(sp)) {
+    if (k === 'car' || v === undefined) continue;
+    for (const item of Array.isArray(v) ? v : [v]) q.append(k, item);
+  }
+  redirect(`/kiosk?${q.toString()}`);
 }
