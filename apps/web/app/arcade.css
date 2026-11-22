@@ -555,30 +555,6 @@
   box-shadow: 0 0 9px #ff658c;
   animation: signal-pulse 2s infinite;
 }
-.tracker-corner {
-  position: absolute;
-  z-index: 3;
-  pointer-events: none;
-  right: 14px;
-  top: 52px;
-  width: 45px;
-  height: 45px;
-  border: 1px solid #7cd3ee77;
-  border-radius: 50%;
-  background: repeating-radial-gradient(
-    circle,
-    #73bce322 0 1px,
-    transparent 1px 10px
-  );
-}
-.tracker-corner:after {
-  content: "";
-  position: absolute;
-  inset: 4px;
-  border-top: 2px solid #ff658c;
-  border-radius: 50%;
-  animation: tracker-radar 5s linear infinite;
-}
 .tracker-trace {
   animation: route-trace 16s linear infinite;
 }
@@ -670,11 +646,6 @@
     opacity: 0.35;
   }
 }
-@keyframes tracker-radar {
-  to {
-    transform: rotate(360deg);
-  }
-}
 @keyframes route-trace {
   to {
     stroke-dashoffset: -100;
@@ -749,7 +720,6 @@
   .comic-score,
   .comic-board li,
   .tracker-topline b,
-  .tracker-corner:after,
   .tracker-trace {
     animation: none !important;
   }

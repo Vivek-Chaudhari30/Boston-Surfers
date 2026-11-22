@@ -594,7 +594,6 @@ function GeoMapInner({ snapshot, youVehicleId = null, variant = 'default', inter
         )}
       </svg>
       <div className="tracker-topline" aria-hidden="true"><b/>T-TRACKER <span style={{color:'#8cd0e9'}}> / BOSTON</span></div>
-      <div className="tracker-corner" aria-hidden="true"/>
 
       <p
         className="pointer-events-none absolute bottom-1.5 left-2 font-sans text-[10px] leading-none text-hud-dim/60"
