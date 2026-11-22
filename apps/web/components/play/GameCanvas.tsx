@@ -12,7 +12,7 @@ export default function GameCanvas({
 }: {
   seed: number;
   lineColor: string;
-  onScore: (s: number) => void;
+  onScore?: (s: number) => void;
   onGameOver: (r: RunResult) => void;
 }) {
   const host = useRef<HTMLDivElement>(null);
@@ -27,7 +27,7 @@ export default function GameCanvas({
     const r = createRunner(host.current, {
       seed,
       theme: { lineColor },
-      onScoreChange: (s) => cbs.current.onScore(s),
+      onScoreChange: (s) => cbs.current.onScore?.(s),
       onGameOver: (res) => cbs.current.onGameOver(res),
     });
     runner.current = r;

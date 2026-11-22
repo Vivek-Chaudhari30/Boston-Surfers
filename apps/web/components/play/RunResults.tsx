@@ -49,6 +49,7 @@ export function RunResults({
   note,
   onReplay,
   onLeave,
+  leaveLabel = "BACK TO THE CITY",
   replayDisabled = false,
   boardTitle,
   boardTag,
@@ -58,10 +59,11 @@ export function RunResults({
   highlightRank?: number | null;
   pending?: boolean;
   error?: string | null;
-  source: "practice" | "ranked";
+  source: "practice" | "ranked" | "local-race";
   note?: string;
   onReplay: () => void;
   onLeave?: () => void;
+  leaveLabel?: string;
   replayDisabled?: boolean;
   boardTitle?: string;
   boardTag?: string;
@@ -188,7 +190,7 @@ export function RunResults({
           </button>
           {onLeave && (
             <button className="comic-button secondary" onClick={onLeave}>
-              BACK TO THE CITY
+              {leaveLabel}
             </button>
           )}
         </div>
