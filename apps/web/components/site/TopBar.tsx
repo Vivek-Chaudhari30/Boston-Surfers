@@ -13,8 +13,8 @@ export function TopBar({ current }: { current?: 'map' | 'leaderboard' }) {
       <div className="flex h-16 items-center justify-between bg-[#122448] px-4">
         <ArcadeBrand/>
         <nav className="flex gap-1">
-          <Link href="/dev/game" className={link(false)}>Play</Link>
-          <Link href="/" className={link(current === 'map')}>
+          <Link href="/kiosk/rewards" className={link(false)}>Rewards</Link>
+          <Link href="/kiosk" className={link(current === 'map')}>
             Map
           </Link>
           <Link href="/leaderboard" className={link(current === 'leaderboard')}>

@@ -51,7 +51,7 @@ describe('join tokens', () => {
 
   it('builds the QR url', () => {
     expect(joinUrl('https://cb.example.com', 'green-3812', 'abc.def')).toBe(
-      'https://cb.example.com/play?car=green-3812&t=abc.def',
+      'https://cb.example.com/mobile?car=green-3812&t=abc.def',
     );
   });
 });

@@ -1,6 +1,6 @@
 /** A phone cannot reach the kiosk's localhost; use its LAN address for local previews. */
 export function gameLink(origin: string, lanAddress?: string) {
-  const url = new URL('/dev/game', origin);
+  const url = new URL('/mobile', origin);
   if (url.protocol !== 'http:' && url.protocol !== 'https:') throw new Error('Invalid game origin');
   const loopback = ['localhost', '127.0.0.1', '[::1]', '0.0.0.0'].includes(url.hostname);
   if (loopback) {

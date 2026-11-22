@@ -1,8 +1,8 @@
 import Link from "next/link";
 
-export function ArcadeBrand() {
+export function ArcadeBrand({ href = "/" }: { href?: string }) {
   return (
-    <Link href="/" className="arcade-brand" aria-label="Boston Surfers home">
+    <Link href={href} className="arcade-brand" aria-label="Boston Surfers home">
       <svg viewBox="0 0 48 48" aria-hidden="true">
         <path
           d="M5 11 23 3l20 8-3 26-17 9L7 36Z"

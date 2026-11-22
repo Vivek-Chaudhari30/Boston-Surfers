@@ -98,6 +98,16 @@ flowchart LR
   P -. "phone shows claim QR" .-> CAM
 ```
 
+### 2.0 Dedicated kiosk and passenger routes (November 21 update)
+
+- `/kiosk` is the fixed laptop display: map, daily leaderboard and a QR to `/mobile`. Its Rewards navigation opens `/kiosk/rewards`, a station-filtered public catalogue. Neither kiosk screen scrolls or launches a game.
+- `/mobile` is the separate passenger pass: Play, My winnings, History and Profile. `/mobile/game` hosts the runner; public leaderboard navigation is omitted from the passenger UI.
+- `GET /api/mobile/history` requires the signed rider session, filters both runs and claims by that rider, and returns private, non-cacheable data. It accepts no rider id from the request. See `apps/web/lib/mobile-history.ts` for the local response schema.
+- Car join QR URLs now target `/mobile?car=…&t=…`. The public QR opens practice without a car token. Existing `/play` and `/kiosk/[carId]` hardware/claim routes remain supported.
+- Real merchant addresses have source and Google Maps links. Proposed discounts are explicitly demo offers; they are not merchant-approved or redeemable. Demo score unlocks never authorize dispensing.
+
+See [KIOSK-AND-MOBILE.md](KIOSK-AND-MOBILE.md) for flow, privacy boundaries and local demo limitations. The legacy component descriptions below continue to document the existing car/hardware workflow.
+
 ### 2.1 Components
 - **Kiosk app** (`/kiosk/[carId]?key=…`): a Next.js page in full-screen Chrome. It renders the map, the car leaderboard, the rotating join QR and the daily ticker. It owns three adapters: `TrainFeed`, `RiderInput` and `Dispenser`. It never decides winners; it asks the API.
 - **Phone app** (`/play`, `/play/run`): signup, join car, lobby (best score, rank, Play, "I'm getting off"), the full-screen game, and the claim QR.

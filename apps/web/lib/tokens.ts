@@ -71,9 +71,9 @@ export function verifyJoinToken(
   return { ok: true, window: w };
 }
 
-/** `https://<app>/play?car=<carId>&t=<token>` */
+/** `https://<app>/mobile?car=<carId>&t=<token>` */
 export function joinUrl(appUrl: string, carId: string, token: string): string {
-  const url = new URL('/play', appUrl);
+  const url = new URL('/mobile', appUrl);
   url.searchParams.set('car', carId);
   url.searchParams.set('t', token);
   return url.toString();
