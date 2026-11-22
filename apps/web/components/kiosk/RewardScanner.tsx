@@ -48,14 +48,12 @@ export function RewardScanner() {
   const [demo, setDemo] = useState<DemoReward | null>(null);
   const [draftKey, setDraftKey] = useState("");
   const [matrixConnection, setMatrixConnection] = useState<
-    "checking" | "ready" | "offline" | "disabled"
+    "checking" | "ready" | "offline"
   >("checking");
   const [matrixAnimation, setMatrixAnimation] = useState<
     "idle" | "playing" | "done" | "error"
   >("idle");
   const [matrixError, setMatrixError] = useState<string | null>(null);
-  const browserBridge = useRef(false);
-  const matrixEnabled = useRef<boolean | null>(null);
   const matrixOperation = useRef<{ payload: string; requestId: string } | null>(
     null,
   );
@@ -63,7 +61,7 @@ export function RewardScanner() {
     let disposed = false;
     async function check() {
       try {
-        if (browserBridge.current) {
+        if (window.location.origin === "https://constant-buffers.vercel.app") {
           await browserMatrixStatus();
           if (!disposed) setMatrixConnection("ready");
           return;
@@ -72,9 +70,8 @@ export function RewardScanner() {
           signal: AbortSignal.timeout(3500),
         });
         if (disposed) return;
-        matrixEnabled.current = status.enabled;
         setMatrixConnection(
-          !status.enabled ? "disabled" : status.connected ? "ready" : "offline",
+          status.enabled && status.connected ? "ready" : "offline",
         );
       } catch {
         if (!disposed) setMatrixConnection("offline");
@@ -93,7 +90,7 @@ export function RewardScanner() {
       setMatrixAnimation("playing");
       setMatrixError(null);
       try {
-        if (browserBridge.current) await playBrowserMatrix(operation.requestId);
+        if (window.location.origin === "https://constant-buffers.vercel.app") await playBrowserMatrix(operation.requestId);
         else await api("/api/demo/matrix", MatrixReply, { body: operation });
         setMatrixAnimation("done");
       } catch (err) {
@@ -103,20 +100,6 @@ export function RewardScanner() {
     },
     [],
   );
-  async function connectMatrix() {
-    setMatrixConnection("checking");
-    setMatrixError(null);
-    try {
-      await browserMatrixStatus();
-      browserBridge.current = true;
-      matrixEnabled.current = true;
-      setMatrixConnection("ready");
-      if (matrixOperation.current) void playMatrix(matrixOperation.current);
-    } catch {
-      setMatrixConnection("disabled");
-      setMatrixError("Keep the UNO Q connected by USB and allow this site’s local network access in Chrome, then retry.");
-    }
-  }
   const submit = useCallback(
     async (code: string) => {
       if (busy.current) return;
@@ -171,7 +154,7 @@ export function RewardScanner() {
       matrixOperation.current = operation;
       setMatrixAnimation("idle");
       setMatrixError(null);
-      if (matrixEnabled.current !== false) void playMatrix(operation);
+      void playMatrix(operation);
     },
     [playMatrix],
   );
@@ -227,14 +210,8 @@ export function RewardScanner() {
               ? "UNO Q LED MATRIX CONNECTED"
               : matrixConnection === "checking"
                 ? "CHECKING USB MATRIX…"
-                : matrixConnection === "disabled"
-                  ? "CONNECT YOUR USB ARDUINO TO ENABLE WIN ANIMATIONS"
-                  : "USB MATRIX OFFLINE · CHECK THE ARDUINO CONNECTION"}
+                : "USB MATRIX OFFLINE · CHECK USB AND CHROME LOCAL NETWORK PERMISSION"}
           </p>
-          {(matrixConnection === "disabled" || matrixConnection === "offline") && (
-            <button className="claim-secondary" onClick={() => void connectMatrix()}>CONNECT USB ARDUINO</button>
-          )}
-          {matrixError && matrixAnimation !== "error" && <p role="alert">{matrixError}</p>}
         </div>
         <Link href="/kiosk" className="claim-close">
           CLOSE CAMERA ×
@@ -329,9 +306,7 @@ export function RewardScanner() {
                       ? "✓ UNO Q LED matrix animation completed"
                       : matrixAnimation === "error"
                         ? matrixError
-                        : matrixConnection === "disabled"
-                          ? "Tap Connect USB Arduino to play this win on the LED matrix."
-                          : ""}
+                        : "The winning animation starts automatically."}
                 </p>
               )}
               {demo && (
@@ -412,31 +387,6 @@ export function RewardScanner() {
           )}
           {captured || cameraCheck || demo ? (
             <div className="claim-actions">
-              {demo && matrixConnection !== "disabled" && (
-                <button
-                  className="personal-button comic-type"
-                  disabled={matrixAnimation === "playing"}
-                  onClick={() => {
-                    const operation =
-                      matrixAnimation === "error" && matrixOperation.current
-                        ? matrixOperation.current
-                        : { payload: demo.payload, requestId: animationId() };
-                    matrixOperation.current = operation;
-                    void playMatrix(operation);
-                  }}
-                >
-                  {matrixAnimation === "playing"
-                    ? "WIN ANIMATION PLAYING…"
-                    : matrixAnimation === "error"
-                      ? "RETRY USB ANIMATION"
-                      : "REPLAY WIN ANIMATION"}
-                </button>
-              )}
-              {demo && matrixConnection === "disabled" && (
-                <button className="claim-secondary" onClick={() => void connectMatrix()}>
-                  CONNECT USB ARDUINO
-                </button>
-              )}
               {captured && (!result || result.state === "hardware_error") && (
                 <button
                   disabled={working || !kioskKey}

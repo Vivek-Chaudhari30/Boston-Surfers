@@ -37,9 +37,9 @@ Open **http://localhost:3001/kiosk/claim in real Chrome on the Mac**. Expect **U
 1. Phone: tap **I am Getting off** below Let's roll.
 2. Kiosk: show the winning QR to its camera (use **Scan another QR** after an earlier result).
 3. Promo code appears, matrix animation plays, and kiosk reports hardware completion.
-4. **Replay win animation** starts a fresh animation on demand.
+4. No animation button is needed: displaying the promo code automatically starts the matrix.
 
-Each deliberate scan/replay gets a new 12-hex request id. Retries of that request keep the same id and don't repeat a completed animation during the bridge process. Completed ids are remembered in server RAM, not across a board reboot. This is a visual demo, not physical coupon dispensing.
+Each deliberate scan gets a new 12-hex request id. Retries of that request keep the same id and don't repeat a completed animation during the bridge process. Completed ids are remembered in server RAM, not across a board reboot. This is a visual demo, not physical coupon dispensing.
 
 `CB-CAMERA-CHECK` is still only a camera diagnostic: it never animates or grants a reward. Use an actual `CBD1:…` winning demo QR.
 
@@ -61,7 +61,7 @@ The local web endpoint `/api/demo/matrix` is opt-in with `UNOQ_MATRIX_DEMO=1`, p
 ## Public Vercel kiosk with USB matrix
 
 Open https://constant-buffers.vercel.app/kiosk/claim in Chrome on the USB-connected Mac.
-Click **Connect USB Arduino** and allow Chrome’s local/loopback network permission.
+The kiosk connects automatically. Allow Chrome’s local/loopback network permission if prompted.
 The website stays on Vercel; browser requests go directly to the loopback USB bridge
 at `127.0.0.1:8765`. Keep the native server and ADB forward running as described above.
 Only the exact `https://constant-buffers.vercel.app` origin and same-origin requests
