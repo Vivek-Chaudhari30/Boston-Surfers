@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { z } from 'zod';
 import { api } from '@/lib/api-client';
 import {
   RACE,
@@ -159,6 +160,13 @@ export function useRaceHost(carId: string, kioskKey: string | null, onRaceEnd?: 
       send({ phase: 'results', raceId, standings });
       publish();
       onEnd.current?.();
+      // Podium awards (1st/2nd/3rd): the server recomputes standings itself; best-effort and idempotent.
+      if (official && standings.length >= 2) {
+        void api(`/api/cars/${carId}/race/awards`, z.unknown(), {
+          body: { since: new Date(m.startedAt).toISOString(), riders: m.participants.join(',') || undefined },
+          kioskKey,
+        }).catch(() => undefined);
+      }
     };
 
     const tick = () => {

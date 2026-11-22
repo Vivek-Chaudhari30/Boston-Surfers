@@ -1,6 +1,8 @@
 import { DailyLeaderboardQuery, type DailyLeaderboardResponse, type Line } from '@cb/shared';
 import { db } from '@/lib/db';
 import { handle, parseObject, queryObject } from '@/lib/http';
+import { after } from 'next/server';
+import { ensureDailyChampions } from '@/lib/awards';
 import { bostonDate } from '@/lib/time';
 
 /** GET /api/leaderboard/daily?date=YYYY-MM-DD → { date, entries } (default: today in Boston). */
@@ -8,6 +10,7 @@ export const GET = handle(async (req: Request) => {
   const query = parseObject(queryObject(req), DailyLeaderboardQuery);
   if (!query.ok) return query.response;
   const date = query.data.date ?? bostonDate();
+  after(() => ensureDailyChampions());
 
   const { data, error } = await db()
     .from('daily_leaderboard')

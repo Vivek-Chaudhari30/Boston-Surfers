@@ -5,6 +5,7 @@ import { carBoard, toEntries } from '@/lib/queries';
 import { broadcastChanged } from '@/lib/realtime';
 import { validateRun, type RideRow, type RunRow } from '@/lib/score';
 import { getRiderSession } from '@/lib/session';
+import { grantMilestones } from '@/lib/awards';
 
 /** POST /api/runs/:runId/finish { score, coins, durationMs } → FinishRunResponse (ARCHITECTURE §7). */
 export const POST = handle(async (req: Request, ctx: { params: Promise<{ runId: string }> }) => {
@@ -74,6 +75,7 @@ export const POST = handle(async (req: Request, ctx: { params: Promise<{ runId: 
   const idx = board.findIndex((r) => r.rider_id === session.riderId);
 
   if (accepted) {
+    await grantMilestones({ riderId: session.riderId, carId: run.car_id, runId: run.id, score: body.data.score });
     void broadcastChanged(carChannel(run.car_id), 'leaderboard');
     void broadcastChanged(DAILY_CHANNEL, 'daily');
   }

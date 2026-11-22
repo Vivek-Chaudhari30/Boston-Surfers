@@ -284,6 +284,15 @@ Sort order: `best_score desc, first_at asc`.
 
 `0002_secure_views.sql` sets `security_invoker = true` on both views and revokes them from `anon`/`authenticated`, so the public key can't read leaderboards directly (Supabase's "Security Definer View" advisor). Only the server, with the secret key, reads them.
 
+### Awards (`0003_awards.sql`, November 21)
+- `award_types (id, name, description, icon, sort)`: `car_champion`, `race_podium`, `daily_champion`, `score_milestone`.
+- `awards (id, rider_id, type_id, dedupe_key unique, title, rank, score, car_id, ride_id, run_id, claim_id, day, meta jsonb, won_at)`. Every grant is an upsert on `dedupe_key`, so grants are idempotent and best-effort (`apps/web/lib/awards.ts`; pure rules in `lib/awards-logic.ts`).
+- **Car champion:** granted in `POST /api/rides/:id/end` when the leader gets off and a claim is issued (`car:<claimId>`).
+- **Race podium:** 1st to 3rd, at least 2 racers. The kiosk calls `POST /api/cars/:carId/race/awards` after a race, and the server recomputes standings from finished runs (`race:<carId>:<startISO>:<rank>`).
+- **Daily champion:** #1 of each finished Boston day. A lazy sweep runs from `/api/leaderboard/daily` and `/api/mobile/profile` (`daily:<day>`).
+- **Score milestone:** 250 / 500 / 750 from `reward-catalog.ts`, once per rider per tier, granted on an accepted run (`milestone:<rider>:<tier>`).
+- Migrations: `scripts/db-migrate.mjs` with `SUPABASE_DB_URL` (session pooler, since the direct host is IPv6-only). It records applied files in `_cb_migrations`. Demo history is in `supabase/seed-demo.sql` (fictional 555-01xx phones, past days only).
+
 ---
 
 ## 4. API contracts
@@ -345,9 +354,14 @@ export type TrainSnapshot = { fetchedAt: string; source: 'live' | 'replay'; vehi
 - Each race run is a normal `/api/runs` run, so validation, the car board and stickers are unchanged.
 - `GET /api/cars/:carId/race?since=<ISO>&riders=<uuid,uuid>` (kiosk): official podium from finished `runs` started within the race window, best score per rider. Returns `{ standings: [{ riderId, displayName, score }] }`. If it fails the kiosk shows the live order marked unofficial.
 - Without Realtime env vars the feature is off.
+- The development server also hosts `/play/race/local`. Code `12345` opens a timed round for solo or LAN play, with a shared seed and standings held in memory on the local server.
+
+### Rider pass and auto voucher (additive, apps/web only)
+- `GET /api/mobile/profile` (cookie): name, masked phone, stats, every play (date, time, score), awards and award-type counts (`MobileProfile` in `lib/awards-logic.ts`).
+- `POST /api/cars/:carId/claims/next` (kiosk): atomically redeems the newest pending claim for the car and returns `{ ok, code, displayName, score, dispenseId }`. On the `claim_pending` broadcast the kiosk calls it, sends the existing frozen `DISPENSE <dispenseId>` over Web Serial (the firmware shows "collect your voucher"), then reports `/api/claims/:code/dispensed`. Typing or scanning a code is still the fallback.
 
 ### Join token and claim code
-- **Join token:** `base64url(carId + '.' + window) + '.' + hmac16`, where `window = floor(now / 30 s)`. The server accepts the current or previous window, so a token lives at most 60 s. The QR URL is `https://<app>/play?car=<carId>&t=<token>`.
+- **Join token:** `base64url(carId + '.' + window) + '.' + hmac16`, where `window = floor(now / 30 s)`. The server accepts the current or previous window, so a token lives at most 60 s. The QR URL is `https://<app>/mobile?car=<carId>&t=<token>`.
 - **Claim code:** 6 characters from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`. The QR content is `CB1:<code>`; the kiosk ignores anything without the `CB1:` prefix. Codes expire after 120 s. `dispenseId` is the first 8 hex characters of the claim id.
 
 ---

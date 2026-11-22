@@ -7,6 +7,7 @@ import { broadcastChanged } from '@/lib/realtime';
 import { clearRideSession, getRiderSession } from '@/lib/session';
 import { bostonDate, bostonDayRange } from '@/lib/time';
 import { claimExpiresAt, generateClaimCode } from '@/lib/tokens';
+import { grantCarChampion } from '@/lib/awards';
 
 /**
  * POST /api/rides/:rideId/end → won (with a 2-minute claim) | not_leader | no_score | already_claimed_today.
@@ -94,21 +95,26 @@ export const POST = handle(async (_req: Request, ctx: { params: Promise<{ rideId
   // Winner: issue a one-time 6-char claim code (retry on the rare unique collision).
   const expiresAt = claimExpiresAt();
   let code = '';
+  let claimId = '';
   for (let attempt = 0; attempt < 5 && !code; attempt++) {
     const candidate = generateClaimCode();
-    const { error: insErr } = await db().from('claims').insert({
+    const { data: inserted, error: insErr } = await db().from('claims').insert({
       code: candidate,
       ride_id: ride.id,
       rider_id: session.riderId,
       car_id: ride.car_id,
       score: leader.best_score,
       expires_at: expiresAt.toISOString(),
-    });
-    if (!insErr) code = candidate;
+    }).select('id').single();
+    if (!insErr) {
+      code = candidate;
+      claimId = inserted.id;
+    }
     else if (insErr.code !== '23505') throw insErr;
   }
   if (!code) throw new Error('could not allocate a claim code');
 
+  await grantCarChampion({ riderId: session.riderId, carId: ride.car_id, rideId: ride.id, claimId, score: leader.best_score });
   await endRide();
   void broadcastChanged(carChannel(ride.car_id), 'claim_pending');
   void broadcastChanged(DAILY_CHANNEL, 'daily');
