@@ -1,7 +1,6 @@
 "use client";
 
 import { OkResponse, isRouteId, lineOfRoute } from "@cb/shared";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
@@ -140,18 +139,8 @@ export function KioskDisplay() {
       <KioskHeader current="map" />
       <section className="display-map" aria-label="Boston live transit map">
         <LiveMap />
-        <div className="display-intro comic-site-card">
-          <p className="display-eyebrow">ISSUE 001 / BOSTON EDITION</p>
-          <h1 className="comic-site-title">
-            Your friendly
-            <br />
-            neighborhood T.
-          </h1>
-          <p>Track the city. Ride the lines. Become the local legend.</p>
-          <Link href="/kiosk/rewards">DISCOVER LOCAL REWARDS ↗</Link>
-        </div>
+        <KioskNotifications />
         <div className="display-legend">
-          <KioskNotifications />
           <LineLegend chips />
         </div>
         {kioskKey && (

@@ -1045,8 +1045,8 @@
 .claim-camera-result:has(.matrix-animation-status) { gap: 10px; }
 .claim-actions > .personal-button { font-size: 19px; }
 
-/* Kiosk map notices sit above the line legend without moving the map or rail. */
-.kiosk-notification-slot { width: min(410px, 36vw); }
+/* Rotating kiosk notices replace the intro card in the top-left map corner. */
+.kiosk-notification-slot { position: absolute; left: 20px; top: 20px; width: min(410px, 36vw); z-index: 4; }
 .kiosk-notification { --notice-accent: #8ce5d3; position: relative; display: grid; grid-template-columns: 32px 1fr; gap: 12px; overflow: hidden; padding: 18px 32px 20px 16px; border: 1px solid #8ce5d366; border-left: 4px solid var(--notice-accent); border-radius: 12px; background: linear-gradient(130deg, #1d3458f5, #0c1c35f5); box-shadow: 0 12px 32px #0008, 3px 3px 0 #071222; backdrop-filter: blur(12px); animation: kiosk-notice-arrive .45s cubic-bezier(.22,1,.36,1) both; }
 .kiosk-notification.delay { --notice-accent: #ffe175; border-color: #ffe17566; }
 .kiosk-notification.reward { --notice-accent: #ff82b3; border-color: #ff82b366; }
